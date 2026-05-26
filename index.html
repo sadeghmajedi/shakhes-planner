@@ -16,14 +16,18 @@
     --dgray:#5B5554; --lgray:#A09A9A;
     --bg:#E8E4DB; --sh1:#c8c4bc; --sh2:#ffffff;
     --r:16px; --rs:12px;
-    --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+    --st:env(safe-area-inset-top,0px);
+    --sb:env(safe-area-inset-bottom,0px);
+    --sl:env(safe-area-inset-left,0px);
+    --sr:env(safe-area-inset-right,0px);
   }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   html,body { overflow-x:hidden; width:100%; }
   body { font-family:'Vazirmatn',sans-serif; background:var(--bg); color:var(--green); min-height:100dvh; font-size:14px; }
 
   /* ── Header ── */
-  .hdr { background:var(--green); padding:calc(var(--st)+14px) 16px 0;
+  .hdr { background:var(--green);
+    padding:calc(var(--st)+14px) calc(16px + var(--sr)) 0 calc(16px + var(--sl));
     border-radius:0 0 24px 24px;
     box-shadow:0 6px 20px rgba(39,60,26,.25);
     position:sticky; top:0; z-index:100; }
@@ -41,7 +45,7 @@
   .ring-fill { stroke:var(--gold); stroke-linecap:round; transition:stroke-dashoffset .5s; }
 
   /* ── Tabs ── */
-  .tabs { display:flex; gap:8px; padding:14px 16px; background:var(--bg); }
+  .tabs { display:flex; gap:8px; padding:14px calc(16px + var(--sr)) 14px calc(16px + var(--sl)); background:var(--bg); }
   .tab { flex:1; padding:9px 0; border-radius:14px; font-size:12px; font-weight:600;
     color:var(--lgray); background:var(--bg); border:none; cursor:pointer;
     font-family:'Vazirmatn',sans-serif;
@@ -53,7 +57,7 @@
                 inset 0 1px 1px rgba(255,255,255,.4); }
 
   /* ── Content ── */
-  .content { padding:14px 14px calc(var(--sb)+90px); }
+  .content { padding:14px calc(14px + var(--sr)) calc(var(--sb)+90px) calc(14px + var(--sl)); }
 
   /* ── Group header ── */
   .grp-hdr { display:flex; align-items:center; gap:8px; margin:16px 4px 8px; }
@@ -144,7 +148,7 @@
 
   /* ── Footer + FAB ── */
   .footer { display:flex; align-items:center; justify-content:space-between;
-    padding:14px 20px calc(var(--sb)+14px);
+    padding:14px calc(20px + var(--sr)) calc(var(--sb)+14px) calc(20px + var(--sl));
     background:var(--green); position:fixed; bottom:0; left:0; right:0; z-index:200;
     border-radius:20px 20px 0 0;
     box-shadow:0 -4px 20px rgba(39,60,26,.2); }
