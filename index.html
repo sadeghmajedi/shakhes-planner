@@ -33,13 +33,17 @@
 
   /* ── Header ── */
   .hdr { background:var(--green);
-    padding:calc(var(--st)+14px) calc(20px + var(--sr)) 0 calc(20px + var(--sl));
-    border-radius:0 0 24px 24px;
-    box-shadow:0 6px 20px rgba(39,60,26,.25);
-    position:sticky; top:0; z-index:100; }
+    padding:calc(var(--st)+14px) calc(20px + var(--sr)) 14px calc(20px + var(--sl));
+    position:sticky; top:0; z-index:100;
+    box-shadow:0 2px 10px rgba(39,60,26,.15); }
   @supports (padding-top:env(safe-area-inset-top)){
     .hdr { padding-top:calc(env(safe-area-inset-top)+14px); }
   }
+
+  /* ── Tabs wrapper ── */
+  .tabs-wrap { position:sticky; top:var(--hdr-h, 120px); z-index:90;
+    background:var(--bg); padding:12px calc(20px + var(--sr)) 12px calc(20px + var(--sl));
+    box-shadow:0 4px 12px rgba(0,0,0,.04); }
   .hdr-inner { display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; padding-right:8px; padding-left:8px; }
   .hdr-sub { font-size:12px; color:rgba(238,230,209,.55); }
   .hdr-center { text-align:center; padding-bottom:14px; }
@@ -51,8 +55,7 @@
   .ring-fill { stroke:var(--gold); stroke-linecap:round; transition:stroke-dashoffset .5s; }
 
   /* ── Tabs ── */
-  .tabs { display:flex; gap:8px; padding:14px calc(20px + var(--sr)) 14px calc(20px + var(--sl));
-    background:var(--bg); position:sticky; top:0; z-index:90; }
+  .tabs { display:flex; gap:8px; }
   .tab { flex:1; padding:9px 0; border-radius:14px; font-size:18px; font-weight:600;
     color:var(--lgray); background:var(--bg); border:none; cursor:pointer;
     font-family:'Vazirmatn',sans-serif;
@@ -255,6 +258,9 @@
   <div class="hdr-center">
     <div class="hdr-title">Sadegh's Daily Tasks</div>
   </div>
+</div>
+
+<div class="tabs-wrap">
   <div class="tabs">
     <button class="tab active" id="tab-daily">روزانه</button>
     <button class="tab" id="tab-recurring">دوره‌ای</button>
@@ -764,10 +770,9 @@ document.getElementById('grpOverlay').addEventListener('click',function(e){if(e.
 load();render();
 setInterval(function(){autoReset();render();},60000);
 
-// تب‌ها رو زیر هدر fix کن
 function fixTabsTop(){
   const hdrH = document.querySelector('.hdr').offsetHeight;
-  document.querySelector('.tabs').style.top = hdrH + 'px';
+  document.querySelector('.tabs-wrap').style.top = hdrH + 'px';
 }
 fixTabsTop();
 window.addEventListener('resize', fixTabsTop);
