@@ -26,11 +26,13 @@
   body { font-family:'Vazirmatn',sans-serif; background:var(--bg); color:var(--green); font-size:16px; }
 
   /* ── Scroll container ── */
-  .scroll-wrap { position:fixed; top:0; left:0; right:0; bottom:0;
-    overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+  .scroll-wrap { position:fixed; top:0; left:0; right:0;
+    bottom:calc(90px + var(--sb));
+    overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain; }
 
   /* ── Content ── */
-  .content { padding:14px calc(20px + var(--sr)) calc(var(--sb)+160px) calc(20px + var(--sl)); }
+  .content { padding:14px calc(20px + var(--sr)) 30px calc(20px + var(--sl)); }
 
   /* ── Header ── */
   .hdr { background:var(--green);
