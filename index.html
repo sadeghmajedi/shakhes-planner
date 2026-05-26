@@ -124,12 +124,12 @@
   /* Overlay / Modal */
   .overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:300;
     display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .3s;
-    overflow:hidden; width:100%; }
+    overflow:hidden; width:100%; padding:0 6px; box-sizing:border-box; }
   .overlay.open { opacity:1; pointer-events:all; }
-  .modal { background:var(--white); border-radius:24px 24px 0 0;
-    padding:24px 16px calc(var(--sb)+28px) 16px; width:100%; max-height:92dvh; overflow-y:auto;
+  .modal { background:var(--white); border-radius:20px 20px 12px 12px;
+    padding:24px 20px calc(var(--sb)+28px) 20px; width:100%; max-height:92dvh; overflow-y:auto;
     transform:translateY(100%); transition:transform .35s cubic-bezier(.4,0,.2,1);
-    box-sizing:border-box; overflow-x:hidden; position:relative; right:0; left:0; }
+    box-sizing:border-box; overflow-x:hidden; }
   .overlay.open .modal { transform:translateY(0); }
   .mhandle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 20px; }
   .mtitle { font-size:17px; font-weight:700; color:var(--green); margin-bottom:20px; }
@@ -193,7 +193,7 @@
     </div>
   </div>
   <div class="hdr-center">
-    <div class="hdr-title">Sadegh's Daily Plans</div>
+    <div class="hdr-title">Sadegh's Daily Plan</div>
   </div>
 </div>
 
