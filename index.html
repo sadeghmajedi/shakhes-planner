@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SHAKHES Planner">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon.svg">
 <title>SHAKHES Planner</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -26,6 +28,7 @@
   }
   .hdr-inner { display:flex; align-items:center; justify-content:space-between; }
   .hdr-sub { color:rgba(238,230,209,.55); font-size:11px; line-height:1.7; }
+  .hdr-center { text-align:center; padding:8px 0 2px; }
   .hdr-title { color:var(--cream); font-size:17px; font-weight:700; letter-spacing:.03em; }
   .prog-wrap { display:flex; align-items:center; gap:7px; color:var(--gold); font-size:13px; font-weight:600; }
   .prog-ring { width:32px; height:32px; }
@@ -38,7 +41,7 @@
     color:rgba(238,230,209,.5); background:transparent; border:none; cursor:pointer; font-family:'Vazirmatn',sans-serif; }
   .tab.active { background:var(--gold); color:var(--green); font-weight:700; }
 
-  .content { padding:20px 16px calc(var(--sb)+90px); }
+  .content { padding:20px 16px calc(var(--sb)+130px); }
 
   /* Group header */
   .grp-hdr { display:flex; align-items:center; gap:8px; margin:18px 4px 8px; }
@@ -155,7 +158,11 @@
   .grp-order-item { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--border); }
   .grp-order-handle { display:flex; flex-direction:column; gap:3px; opacity:.3; cursor:grab; padding:4px; touch-action:none; }
   .grp-order-handle span { display:block; width:14px; height:2px; background:var(--green); border-radius:1px; }
-  .hint { font-size:12px; color:var(--lgray); padding:8px 4px 4px; }
+  .footer { text-align:center; padding:12px 20px calc(var(--sb) + 12px);
+    font-size:11px; color:var(--lgray); letter-spacing:.03em;
+    border-top:1px solid var(--border); background:var(--bg);
+    position:fixed; bottom:0; left:0; right:0; z-index:50; }
+  .footer span { color:var(--gold); font-weight:600; }
 
   /* Custom group dropdown */
   .grp-input-wrap { position:relative; }
@@ -173,10 +180,7 @@
 
 <div class="hdr">
   <div class="hdr-inner">
-    <div>
-      <div class="hdr-sub" id="hdrDate"></div>
-      <div class="hdr-title">SHAKHES Planner</div>
-    </div>
+    <div class="hdr-sub" id="hdrDate"></div>
     <div class="prog-wrap">
       <span id="progTxt">۰٪</span>
       <svg class="prog-ring" viewBox="0 0 36 36">
@@ -184,6 +188,9 @@
         <circle class="ring-fill" id="ringFill" cx="18" cy="18" r="15" stroke-dasharray="94.25" stroke-dashoffset="94.25"/>
       </svg>
     </div>
+  </div>
+  <div class="hdr-center">
+    <div class="hdr-title">Sadegh's Daily Plan</div>
   </div>
 </div>
 
@@ -260,6 +267,8 @@
     </div>
   </div>
 </div>
+
+<div class="footer">Designed &amp; Developed by <span>Seyed Sadegh Majedi</span></div>
 
 <script>
 const DAYS=['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
