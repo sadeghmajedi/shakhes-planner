@@ -22,14 +22,15 @@
     --sr:env(safe-area-inset-right,0px);
   }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-  html { overflow-x:hidden; width:100%; height:100%; }
-  body { font-family:'Vazirmatn',sans-serif; background:var(--bg); color:var(--green);
-    min-height:100%; font-size:16px; overflow-x:hidden;
-    padding-bottom:calc(var(--sb) + 150px);
-    -webkit-overflow-scrolling:touch; }
+  html, body { height:100%; width:100%; overflow:hidden; }
+  body { font-family:'Vazirmatn',sans-serif; background:var(--bg); color:var(--green); font-size:16px; }
+
+  /* ── Scroll container ── */
+  .scroll-wrap { position:fixed; top:0; left:0; right:0; bottom:0;
+    overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
 
   /* ── Content ── */
-  .content { padding:14px calc(20px + var(--sr)) 20px calc(20px + var(--sl)); }
+  .content { padding:14px calc(20px + var(--sr)) calc(var(--sb)+160px) calc(20px + var(--sl)); }
 
   /* ── Header ── */
   .hdr { background:var(--green);
@@ -244,6 +245,8 @@
 </head>
 <body>
 
+<div class="scroll-wrap" id="scrollWrap">
+
 <div class="hdr">
   <div class="hdr-inner">
     <div class="hdr-sub" id="hdrDate"></div>
@@ -268,6 +271,8 @@
 </div>
 
 <div class="content" id="content"></div>
+
+</div><!-- end scroll-wrap -->
 
 <button class="fab" id="fabBtn">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
