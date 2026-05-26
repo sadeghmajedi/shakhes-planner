@@ -14,7 +14,7 @@
   :root {
     --green:#273C1A; --gold:#E1B324; --cream:#EEE6D1;
     --dgray:#5B5554; --lgray:#A09A9A;
-    --bg:#E8E4DB; --sh1:#c8c4bc; --sh2:#ffffff;
+    --bg:#F0EDE6; --sh1:#d4d0c8; --sh2:#ffffff;
     --r:16px; --rs:12px;
     --st:env(safe-area-inset-top,0px);
     --sb:env(safe-area-inset-bottom,0px);
@@ -57,7 +57,7 @@
                 inset 0 1px 1px rgba(255,255,255,.4); }
 
   /* ── Content ── */
-  .content { padding:14px calc(20px + var(--sr)) calc(var(--sb)+90px) calc(20px + var(--sl)); }
+  .content { padding:14px calc(20px + var(--sr)) calc(var(--sb)+110px) calc(20px + var(--sl)); }
 
   /* ── Group header ── */
   .grp-hdr { display:flex; align-items:center; gap:8px; margin:16px 4px 8px; }
@@ -148,18 +148,18 @@
 
   /* ── Footer + FAB ── */
   .footer { display:flex; align-items:center; justify-content:center;
-    padding:28px calc(20px + var(--sr)) calc(var(--sb)+16px) calc(20px + var(--sl));
+    padding:32px calc(20px + var(--sr)) calc(var(--sb)+14px) calc(20px + var(--sl));
     background:var(--green); position:fixed; bottom:0; left:0; right:0; z-index:200;
     border-radius:24px 24px 0 0;
     box-shadow:0 -4px 20px rgba(39,60,26,.2); }
   .footer-text { text-align:center; font-size:10px; color:rgba(238,230,209,.5); letter-spacing:.02em; }
   .footer-text span { color:var(--gold); font-weight:600; }
-  .fab { position:fixed; bottom:calc(var(--sb) + 44px); left:50%; transform:translateX(-50%);
-    width:48px; height:48px; border-radius:50%; border:none; cursor:pointer; z-index:201;
+  .fab { position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(var(--sb) + 50px);
+    width:50px; height:50px; border-radius:50%; border:none; cursor:pointer; z-index:201;
     display:flex; align-items:center; justify-content:center;
     background:linear-gradient(145deg,#f0c42a,#d4a818);
-    box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 -2px 8px rgba(255,220,50,.2),
-                inset 0 1px 1px rgba(255,255,255,.4); }
+    box-shadow: 0 4px 16px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.4); }
   .fab:active { transform:translateX(-50%) scale(0.94); }
   .fab svg { width:22px; height:22px; color:#1e3012; }
 
