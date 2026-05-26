@@ -27,7 +27,7 @@
 
   /* ── Header ── */
   .hdr { background:var(--green);
-    padding:calc(var(--st)+14px) calc(16px + var(--sr)) 0 calc(16px + var(--sl));
+    padding:calc(var(--st)+14px) calc(20px + var(--sr)) 0 calc(20px + var(--sl));
     border-radius:0 0 24px 24px;
     box-shadow:0 6px 20px rgba(39,60,26,.25);
     position:sticky; top:0; z-index:100; }
@@ -45,7 +45,7 @@
   .ring-fill { stroke:var(--gold); stroke-linecap:round; transition:stroke-dashoffset .5s; }
 
   /* ── Tabs ── */
-  .tabs { display:flex; gap:8px; padding:14px calc(18px + var(--sr)) 14px calc(18px + var(--sl)); background:var(--bg); }
+  .tabs { display:flex; gap:8px; padding:14px calc(20px + var(--sr)) 14px calc(20px + var(--sl)); background:var(--bg); }
   .tab { flex:1; padding:9px 0; border-radius:14px; font-size:12px; font-weight:600;
     color:var(--lgray); background:var(--bg); border:none; cursor:pointer;
     font-family:'Vazirmatn',sans-serif;
@@ -57,7 +57,7 @@
                 inset 0 1px 1px rgba(255,255,255,.4); }
 
   /* ── Content ── */
-  .content { padding:14px calc(18px + var(--sr)) calc(var(--sb)+90px) calc(18px + var(--sl)); }
+  .content { padding:14px calc(20px + var(--sr)) calc(var(--sb)+90px) calc(20px + var(--sl)); }
 
   /* ── Group header ── */
   .grp-hdr { display:flex; align-items:center; gap:8px; margin:16px 4px 8px; }
@@ -147,21 +147,21 @@
   .empty p { font-size:14px; }
 
   /* ── Footer + FAB ── */
-  .footer { display:flex; align-items:center; justify-content:space-between;
-    padding:14px calc(20px + var(--sr)) calc(var(--sb)+14px) calc(20px + var(--sl));
+  .footer { display:flex; align-items:center; justify-content:center;
+    padding:28px calc(20px + var(--sr)) calc(var(--sb)+16px) calc(20px + var(--sl));
     background:var(--green); position:fixed; bottom:0; left:0; right:0; z-index:200;
-    border-radius:20px 20px 0 0;
+    border-radius:24px 24px 0 0;
     box-shadow:0 -4px 20px rgba(39,60,26,.2); }
-  .footer-text { flex:1; text-align:center; font-size:10px; color:rgba(238,230,209,.5);
-    padding-right:40px; letter-spacing:.02em; }
+  .footer-text { text-align:center; font-size:10px; color:rgba(238,230,209,.5); letter-spacing:.02em; }
   .footer-text span { color:var(--gold); font-weight:600; }
-  .fab { width:42px; height:42px; border-radius:50%; border:none; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  .fab { position:fixed; bottom:calc(var(--sb) + 44px); left:50%; transform:translateX(-50%);
+    width:48px; height:48px; border-radius:50%; border:none; cursor:pointer; z-index:201;
+    display:flex; align-items:center; justify-content:center;
     background:linear-gradient(145deg,#f0c42a,#d4a818);
-    box-shadow: 4px 4px 12px rgba(0,0,0,.3), -2px -2px 6px rgba(255,220,50,.15),
+    box-shadow: 0 4px 16px rgba(0,0,0,.3), 0 -2px 8px rgba(255,220,50,.2),
                 inset 0 1px 1px rgba(255,255,255,.4); }
-  .fab:active { box-shadow: inset 3px 3px 8px rgba(0,0,0,.25); }
-  .fab svg { width:20px; height:20px; color:#1e3012; }
+  .fab:active { transform:translateX(-50%) scale(0.94); }
+  .fab svg { width:22px; height:22px; color:#1e3012; }
 
   /* ── Overlay / Modal ── */
   .overlay { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:300;
@@ -256,12 +256,13 @@
 
 <div class="content" id="content"></div>
 
+<button class="fab" id="fabBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
 <div class="footer">
-  <button class="fab" id="fabBtn">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-  </button>
   <div class="footer-text">Designed &amp; Developed by <span>Seyed Sadegh Majedi</span></div>
 </div>
 
