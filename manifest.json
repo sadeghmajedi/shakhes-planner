@@ -1,15 +1,15 @@
 {
-  "name": "SHAKHES Planner",
-  "short_name": "SHAKHES",
+  "name": "Sadegh's Daily Plan",
+  "short_name": "Daily Plan",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#273C1A",
   "theme_color": "#273C1A",
   "icons": [
     {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "./apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
