@@ -1,6 +1,6 @@
 {
-  "name": "Sadegh's Daily Plan",
-  "short_name": "Daily Plan",
+  "name": "Sadegh's Daily Plans",
+  "short_name": "Daily Plans",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#273C1A",
