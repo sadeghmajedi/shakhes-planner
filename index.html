@@ -51,7 +51,8 @@
   .ring-fill { stroke:var(--gold); stroke-linecap:round; transition:stroke-dashoffset .5s; }
 
   /* ── Tabs ── */
-  .tabs { display:flex; gap:8px; padding:14px calc(20px + var(--sr)) 14px calc(20px + var(--sl)); background:var(--bg); }
+  .tabs { display:flex; gap:8px; padding:14px calc(20px + var(--sr)) 14px calc(20px + var(--sl));
+    background:var(--bg); position:sticky; top:0; z-index:90; }
   .tab { flex:1; padding:9px 0; border-radius:14px; font-size:18px; font-weight:600;
     color:var(--lgray); background:var(--bg); border:none; cursor:pointer;
     font-family:'Vazirmatn',sans-serif;
@@ -762,6 +763,14 @@ document.getElementById('grpOverlay').addEventListener('click',function(e){if(e.
 
 load();render();
 setInterval(function(){autoReset();render();},60000);
+
+// تب‌ها رو زیر هدر fix کن
+function fixTabsTop(){
+  const hdrH = document.querySelector('.hdr').offsetHeight;
+  document.querySelector('.tabs').style.top = hdrH + 'px';
+}
+fixTabsTop();
+window.addEventListener('resize', fixTabsTop);
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){});}
 </script>
 </body>
