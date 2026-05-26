@@ -161,19 +161,25 @@
   .grp-order-item { display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--border); }
   .grp-order-handle { display:flex; flex-direction:column; gap:3px; opacity:.3; cursor:grab; padding:4px; touch-action:none; }
   .grp-order-handle span { display:block; width:14px; height:2px; background:var(--green); border-radius:1px; }
-  .footer { text-align:center; padding:12px 20px calc(var(--sb) + 12px);
+  .footer { display:flex; align-items:center; justify-content:space-between;
+    padding:10px 20px calc(var(--sb) + 10px);
     font-size:11px; color:var(--lgray); letter-spacing:.03em;
     border-top:1px solid var(--border); background:var(--bg);
-    position:fixed; bottom:0; left:0; right:0; z-index:50; }
+    position:fixed; bottom:0; left:0; right:0; z-index:250; }
   .footer span { color:var(--gold); font-weight:600; }
+  .footer-text { flex:1; text-align:center; padding-right:46px; }
+  .fab { width:40px; height:40px; border-radius:50%; background:var(--gold); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    box-shadow:0 3px 12px rgba(225,179,36,.4); }
+  .fab svg { width:20px; height:20px; color:var(--green); }
 
   /* Custom group dropdown */
   .grp-input-wrap { position:relative; }
-  .grp-dropdown { position:absolute; top:calc(100% + 4px); right:0; left:0; background:var(--white);
+  .grp-dropdown { position:absolute; bottom:calc(100% + 4px); right:0; left:0; background:var(--white);
     border:1.5px solid var(--green); border-radius:var(--rs); z-index:500;
-    box-shadow:0 8px 24px rgba(39,60,26,0.15); overflow:hidden; display:none; }
+    box-shadow:0 -4px 20px rgba(39,60,26,0.12); overflow:hidden; display:none; max-height:180px; overflow-y:auto; }
   .grp-dropdown.open { display:block; }
-  .grp-dropdown-item { display:flex; align-items:center; gap:10px; padding:12px 14px;
+  .grp-dropdown-item { display:flex; align-items:center; gap:10px; padding:11px 14px;
     cursor:pointer; font-size:14px; color:var(--green); font-family:'Vazirmatn',sans-serif; }
   .grp-dropdown-item:hover, .grp-dropdown-item:active { background:var(--bg); }
   .grp-dropdown-item .item-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
@@ -203,12 +209,6 @@
 </div>
 
 <div class="content" id="content"></div>
-
-<button class="fab" id="fabBtn">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-</button>
 
 <!-- Task Modal -->
 <div class="overlay" id="overlay">
@@ -271,7 +271,14 @@
   </div>
 </div>
 
-<div class="footer">Designed &amp; Developed by <span>Seyed Sadegh Majedi</span></div>
+<div class="footer">
+  <button class="fab" id="fabBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+  <div class="footer-text">Designed &amp; Developed by <span>Seyed Sadegh Majedi</span></div>
+</div>
 
 <script>
 const DAYS=['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
