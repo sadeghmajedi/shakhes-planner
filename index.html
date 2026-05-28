@@ -357,7 +357,13 @@ const PALETTE=['#E74C3C','#E67E22','#2980B9','#27AE60','#8E44AD','#1ABC9C','#D35
 const fp=n=>String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
 const todayStr=()=>new Date().toDateString();
 
-function toShamsiFixed(date){
+function localDateStr(date){
+  const d = date || new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
   var gy=date.getFullYear(),gm=date.getMonth()+1,gd=date.getDate(),jy,jm,jd,g_d_no,j_d_no,j_np,i;
   gy-=1600;gm-=1;gd-=1;
   g_d_no=365*gy+parseInt((gy+3)/4)-parseInt((gy+99)/100)+parseInt((gy+399)/400);
@@ -420,7 +426,7 @@ function hideGrpDropdown(){const dd=document.getElementById('grpDropdown');if(dd
 function updateSuggestions(){}
 
 function autoReset(){
-  const tstr=new Date().toISOString().split('T')[0];let changed=false;
+  const tstr=localDateStr();let changed=false;
   tasks.forEach(t=>{
     if(t.type==='daily'&&t.done&&t.doneDate!==todayStr()){t.done=false;t.doneDate=null;changed=true;}
     if(t.type==='recurring'&&t.done&&t.nextDue&&t.nextDue<=tstr){t.done=false;t.doneDate=null;changed=true;}
@@ -429,7 +435,7 @@ function autoReset(){
 }
 
 function updateProgress(){
-  const tstr=new Date().toISOString().split('T')[0];
+  const tstr=localDateStr();
   const daily=tasks.filter(t=>t.type==='daily');
   const dueR=tasks.filter(t=>t.type==='recurring'&&!t.done&&(!t.nextDue||t.nextDue<=tstr));
   const all=[...daily,...dueR];
@@ -536,7 +542,7 @@ function renderGrouped(taskList,container,showRecurBadgeFor){
 
 function renderDaily(){
   const c=document.getElementById('content');c.innerHTML='';
-  const tstr=new Date().toISOString().split('T')[0];
+  const tstr=localDateStr();
   const dailyTasks=tasks.filter(t=>t.type==='daily');
   const dueRecurring=tasks.filter(t=>t.type==='recurring'&&!t.done&&(!t.nextDue||t.nextDue<=tstr));
   const dueIds=new Set(dueRecurring.map(t=>t.id));
@@ -564,7 +570,7 @@ function renderDaily(){
 
 function renderRecurring(){
   const c=document.getElementById('content');c.innerHTML='';
-  const tstr=new Date().toISOString().split('T')[0];
+  const tstr=localDateStr();
   const all=tasks.filter(t=>t.type==='recurring');
   if(!all.length){c.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg><p>هیچ کار دوره‌ای ثبت نشده</p></div>`;return;}
   const due=all.filter(t=>!t.done&&(!t.nextDue||t.nextDue<=tstr)).sort((a,b)=>(a.nextDue||'').localeCompare(b.nextDue||''));
@@ -586,8 +592,8 @@ function toggleTask(id){
   if(t.type==='daily'){t.done=!t.done;t.doneDate=t.done?todayStr():null;}
   else{
     if(!t.done){
-      if(t.interval!=='custom'){const n=new Date();n.setDate(n.getDate()+(IDAYS[t.interval]||7));t.nextDue=n.toISOString().split('T')[0];}
-      else{const n=new Date();n.setDate(n.getDate()+1);t.nextDue=n.toISOString().split('T')[0];}
+      if(t.interval!=='custom'){const n=new Date();n.setDate(n.getDate()+(IDAYS[t.interval]||7));t.nextDue=localDateStr(n);}
+      else{const n=new Date();n.setDate(n.getDate()+1);t.nextDue=localDateStr(n);}
       t.done=true;t.doneDate=todayStr();
     } else{t.done=false;t.doneDate=null;}
   }
@@ -640,7 +646,7 @@ function saveTask(){
   let nextDue=null;
   if(ctype==='recurring'){
     if(interval==='custom')nextDue=customDate;
-    else{const n=new Date();n.setDate(n.getDate()+(IDAYS[interval]||7));nextDue=n.toISOString().split('T')[0];}
+    else{const n=new Date();n.setDate(n.getDate()+(IDAYS[interval]||7));nextDue=localDateStr(n);}
   }
   const group=document.getElementById('fgroup').value.trim();
   if(editId){
@@ -718,7 +724,7 @@ function initDrag(){
 function dragStart(e){
   e.preventDefault();const card=e.currentTarget.closest('.card');if(!card)return;
   const id=card.dataset.id;const task=tasks.find(t=>t.id===id);if(!task)return;
-  const tstr=new Date().toISOString().split('T')[0];
+  const tstr=localDateStr();
   const section=task.type==='daily'?(task.done?'done':'pending'):(task.done&&task.nextDue>tstr?'upcoming':'due');
   const ghost=card.cloneNode(true);const rect=card.getBoundingClientRect();
   const cx=e.touches?e.touches[0].clientX:e.clientX;const cy=e.touches?e.touches[0].clientY:e.clientY;
@@ -736,7 +742,7 @@ function dragMove(e){
   const oc=el?.closest('.card');const oid=oc?.dataset.id;
   if(drag.lastOver&&drag.lastOver!==oid)document.querySelector(`.card[data-id="${drag.lastOver}"]`)?.classList.remove('dragover');
   if(oid&&oid!==drag.id){
-    const ot=tasks.find(t=>t.id===oid);const tstr=new Date().toISOString().split('T')[0];
+    const ot=tasks.find(t=>t.id===oid);const tstr=localDateStr();
     const os=ot?.type==='daily'?(ot.done?'done':'pending'):(ot?.done&&ot.nextDue>tstr?'upcoming':'due');
     if(os===drag.section){oc.classList.add('dragover');drag.lastOver=oid;}
   }
@@ -747,7 +753,7 @@ function dragEnd(e){
   drag.ghost.style.display='none';const el=document.elementFromPoint(cx,cy);drag.ghost.style.display='';
   const oc=el?.closest('.card');const tid=oc?.dataset.id;
   if(tid&&tid!==drag.id){
-    const ot=tasks.find(t=>t.id===tid);const tstr=new Date().toISOString().split('T')[0];
+    const ot=tasks.find(t=>t.id===tid);const tstr=localDateStr();
     const os=ot?.type==='daily'?(ot.done?'done':'pending'):(ot?.done&&ot.nextDue>tstr?'upcoming':'due');
     if(os===drag.section){const fi=tasks.findIndex(t=>t.id===drag.id);const ti=tasks.findIndex(t=>t.id===tid);const[m]=tasks.splice(fi,1);tasks.splice(ti,0,m);save();}
   }
