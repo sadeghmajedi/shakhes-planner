@@ -766,7 +766,16 @@ document.getElementById('cancelBtn').addEventListener('click',closeModal);
 document.getElementById('saveBtn').addEventListener('click',saveTask);
 document.getElementById('btn-daily').addEventListener('click',function(){setType('daily');});
 document.getElementById('btn-recurring').addEventListener('click',function(){setType('recurring');});
-document.getElementById('finterval').addEventListener('change',function(){document.getElementById('customDateWrap').style.display=this.value==='custom'?'block':'none';});
+document.getElementById('finterval').addEventListener('change',function(){
+  const isCustom = this.value === 'custom';
+  document.getElementById('customDateWrap').style.display = isCustom ? 'block' : 'none';
+  if(isCustom){
+    const dateInput = document.getElementById('fcustomDate');
+    setTimeout(function(){
+      try { dateInput.showPicker(); } catch(e) { dateInput.focus(); }
+    }, 200);
+  }
+});
 document.getElementById('fgroup').addEventListener('focus',function(){showGrpDropdown(this.value);});
 document.getElementById('fgroup').addEventListener('input',function(){showGrpDropdown(this.value);});
 document.getElementById('fgroup').addEventListener('blur',function(){setTimeout(hideGrpDropdown,200);});
