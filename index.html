@@ -387,6 +387,13 @@
     <div class="mtitle">پشتیبان‌گیری و بازگردانی</div>
 
     <div class="bk-section">
+      <div class="bk-label">وضعیت داده‌های این نسخه</div>
+      <p class="bk-desc" id="bkDiagInfo" style="white-space:pre-line;">در حال بررسی...</p>
+    </div>
+
+    <div class="bk-divider"></div>
+
+    <div class="bk-section">
       <div class="bk-label">گرفتن نسخه پشتیبان</div>
       <p class="bk-desc">یک فایل JSON شامل تمام تسک‌ها و ترتیب گروه‌ها ساخته می‌شود.</p>
       <div class="bk-row">
@@ -905,7 +912,18 @@ function restoreFromFile(file){
   reader.onerror=function(){showBkStatus('bkRestoreStatus','خطا در خواندن فایل',false);};
   reader.readAsText(file);
 }
+function getDiagInfo(){
+  try{
+    const rawTasks=localStorage.getItem('shakhes_tasks');
+    const tasksArr=rawTasks?JSON.parse(rawTasks):[];
+    const count=Array.isArray(tasksArr)?tasksArr.length:0;
+    const sizeKB=rawTasks?(new Blob([rawTasks]).size/1024).toFixed(1):'0';
+    const standalone=window.navigator.standalone===true?'بله (Home Screen)':'خیر (Safari/Tab)';
+    return 'تعداد تسک‌ها: '+fp(count)+'\nحجم داده: '+fp(sizeKB)+' KB\nحالت اجرا: '+standalone+'\nآدرس: '+location.href;
+  }catch(e){return 'خطا در خواندن داده: '+e.message;}
+}
 function openBackupModal(){
+  document.getElementById('bkDiagInfo').textContent=getDiagInfo();
   document.getElementById('bkSaveStatus').textContent='';
   document.getElementById('bkRestoreStatus').textContent='';
   document.getElementById('bkOverlay').classList.add('open');
