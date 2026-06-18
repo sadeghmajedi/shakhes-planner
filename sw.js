@@ -35,5 +35,6 @@ self.addEventListener('fetch', e => {
   // Cache-first for everything else (icons, manifest, fonts, etc.)
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
+    
   );
 });
