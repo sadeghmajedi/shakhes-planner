@@ -52,6 +52,10 @@
   .hdr-center { text-align:center; padding-bottom:14px; }
   .hdr-title { color:var(--cream); font-size:17px; font-weight:700; letter-spacing:.02em; }
   .prog-wrap { display:flex; align-items:center; gap:6px; color:var(--gold); font-size:18px; font-weight:700; }
+  .hdr-right { display:flex; align-items:center; gap:8px; }
+  .hdr-icon-btn { width:32px; height:32px; border-radius:50%; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; background:rgba(238,230,209,.12); }
+  .hdr-icon-btn svg { width:18px; height:18px; color:var(--cream); }
   .prog-ring { width:28px; height:28px; }
   .prog-ring circle { fill:none; stroke-width:3; transform:rotate(-90deg); transform-origin:50% 50%; }
   .ring-bg { stroke:rgba(225,179,36,.2); }
@@ -243,6 +247,27 @@
   .grp-order-handle { display:flex; flex-direction:column; gap:3px; opacity:.3; cursor:grab; padding:4px; touch-action:none; }
   .grp-order-handle span { display:block; width:14px; height:2px; background:var(--green); border-radius:1px; }
   .hint { font-size:18px; color:var(--lgray); padding:4px 4px 10px; }
+
+  /* backup modal */
+  .bk-section { margin-bottom:20px; }
+  .bk-section:last-child { margin-bottom:0; }
+  .bk-label { font-size:14px; font-weight:700; color:var(--dgray); margin-bottom:10px; }
+  .bk-desc { font-size:13px; color:var(--lgray); margin-bottom:12px; line-height:1.6; }
+  .bk-row { display:flex; gap:10px; }
+  .bk-btn { flex:1; padding:13px; border-radius:var(--rs); font-size:15px; font-weight:700;
+    font-family:'Vazirmatn',sans-serif; border:none; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; gap:6px;
+    color:#EEE6D1; background:linear-gradient(145deg,#2e4820,#1e3012);
+    box-shadow: 4px 4px 10px rgba(0,0,0,.25), -2px -2px 6px rgba(255,255,255,.05); }
+  .bk-btn svg { width:16px; height:16px; }
+  .bk-restore-btn { width:100%; padding:13px; border-radius:var(--rs); font-size:15px; font-weight:700;
+    font-family:'Vazirmatn',sans-serif; border:none; cursor:pointer;
+    color:var(--green); background:var(--bg);
+    box-shadow: 3px 3px 8px var(--sh1), -2px -2px 6px var(--sh2); }
+  .bk-divider { height:1px; background:rgba(0,0,0,.08); margin:18px 0; }
+  .bk-status { font-size:13px; margin-top:10px; text-align:center; min-height:18px; }
+  .bk-status.ok { color:#27AE60; }
+  .bk-status.err { color:#E74C3C; }
 </style>
 </head>
 <body>
@@ -252,12 +277,20 @@
 <div class="hdr">
   <div class="hdr-inner">
     <div class="hdr-sub" id="hdrDate"></div>
-    <div class="prog-wrap">
-      <span id="progTxt">۰٪</span>
-      <svg class="prog-ring" viewBox="0 0 36 36">
-        <circle class="ring-bg" cx="18" cy="18" r="15"/>
-        <circle class="ring-fill" id="ringFill" cx="18" cy="18" r="15" stroke-dasharray="94.25" stroke-dashoffset="94.25"/>
-      </svg>
+    <div class="hdr-right">
+      <button class="hdr-icon-btn" id="settingsBtn" aria-label="تنظیمات">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <div class="prog-wrap">
+        <span id="progTxt">۰٪</span>
+        <svg class="prog-ring" viewBox="0 0 36 36">
+          <circle class="ring-bg" cx="18" cy="18" r="15"/>
+          <circle class="ring-fill" id="ringFill" cx="18" cy="18" r="15" stroke-dasharray="94.25" stroke-dashoffset="94.25"/>
+        </svg>
+      </div>
     </div>
   </div>
   <div class="hdr-center">
@@ -347,6 +380,44 @@
   </div>
 </div>
 
+<!-- Backup/Restore Modal -->
+<div class="overlay" id="bkOverlay">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">پشتیبان‌گیری و بازگردانی</div>
+
+    <div class="bk-section">
+      <div class="bk-label">گرفتن نسخه پشتیبان</div>
+      <p class="bk-desc">یک فایل JSON شامل تمام تسک‌ها و ترتیب گروه‌ها ساخته می‌شود.</p>
+      <div class="bk-row">
+        <button class="bk-btn" id="bkDownloadBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          دانلود فایل
+        </button>
+        <button class="bk-btn" id="bkShareBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          اشتراک‌گذاری
+        </button>
+      </div>
+      <div class="bk-status" id="bkSaveStatus"></div>
+    </div>
+
+    <div class="bk-divider"></div>
+
+    <div class="bk-section">
+      <div class="bk-label">بازگردانی از فایل پشتیبان</div>
+      <p class="bk-desc">⚠️ بازگردانی، تمام داده‌های فعلی را با محتوای فایل جایگزین می‌کند.</p>
+      <button class="bk-restore-btn" id="bkRestoreBtn">انتخاب فایل و بازگردانی</button>
+      <input type="file" id="bkFileInput" accept="application/json,.json" style="display:none">
+      <div class="bk-status" id="bkRestoreStatus"></div>
+    </div>
+
+    <div class="mbtns">
+      <button class="mbtn-s" id="closeBkBtn" style="flex:1">بستن</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const DAYS=['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
 const SHAMSI_M=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
@@ -364,6 +435,7 @@ function localDateStr(date){
   const day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 }
+function toShamsiFixed(date){
   var gy=date.getFullYear(),gm=date.getMonth()+1,gd=date.getDate(),jy,jm,jd,g_d_no,j_d_no,j_np,i;
   gy-=1600;gm-=1;gd-=1;
   g_d_no=365*gy+parseInt((gy+3)/4)-parseInt((gy+99)/100)+parseInt((gy+399)/400);
@@ -765,6 +837,81 @@ function dragEnd(e){
   render();
 }
 
+/* ── Backup / Restore ── */
+function buildBackupObject(){
+  return {
+    app: 'shakhes-planner',
+    backupVersion: 1,
+    exportedAt: new Date().toISOString(),
+    exportedAtShamsi: getDateLine(),
+    data: {
+      shakhes_tasks: localStorage.getItem('shakhes_tasks') || '[]',
+      shakhes_grp_order: localStorage.getItem('shakhes_grp_order') || '[]'
+    }
+  };
+}
+function backupFileName(){
+  const d = new Date();
+  const stamp = d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
+  return 'shakhes-planner-backup-'+stamp+'.json';
+}
+function showBkStatus(elId,msg,ok){
+  const el=document.getElementById(elId);
+  el.textContent=msg;
+  el.className='bk-status '+(ok?'ok':'err');
+}
+function downloadBackup(){
+  try{
+    const json=JSON.stringify(buildBackupObject(),null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=backupFileName();
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+    showBkStatus('bkSaveStatus','✓ فایل پشتیبان دانلود شد',true);
+  }catch(e){showBkStatus('bkSaveStatus','خطا در ساخت فایل پشتیبان',false);}
+}
+function shareBackup(){
+  try{
+    const json=JSON.stringify(buildBackupObject(),null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const file=new File([blob],backupFileName(),{type:'application/json'});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:'پشتیبان شاخص پلنر'}).catch(function(){});
+    }else{
+      downloadBackup();
+    }
+  }catch(e){downloadBackup();}
+}
+function restoreFromFile(file){
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const parsed=JSON.parse(e.target.result);
+      const payload = parsed && parsed.data ? parsed.data : parsed;
+      if(!payload || typeof payload.shakhes_tasks==='undefined'){
+        showBkStatus('bkRestoreStatus','فایل معتبر نیست',false);return;
+      }
+      const newTasks=JSON.parse(payload.shakhes_tasks);
+      if(!Array.isArray(newTasks)){showBkStatus('bkRestoreStatus','فایل معتبر نیست',false);return;}
+      if(!confirm('با بازگردانی، تمام داده‌های فعلی حذف و با محتوای فایل جایگزین می‌شود. ادامه می‌دهید؟'))return;
+      localStorage.setItem('shakhes_tasks',payload.shakhes_tasks);
+      if(payload.shakhes_grp_order) localStorage.setItem('shakhes_grp_order',payload.shakhes_grp_order);
+      showBkStatus('bkRestoreStatus','✓ بازگردانی شد. در حال بارگذاری مجدد...',true);
+      setTimeout(function(){window.location.reload();},1000);
+    }catch(err){showBkStatus('bkRestoreStatus','خطا در خواندن فایل',false);}
+  };
+  reader.onerror=function(){showBkStatus('bkRestoreStatus','خطا در خواندن فایل',false);};
+  reader.readAsText(file);
+}
+function openBackupModal(){
+  document.getElementById('bkSaveStatus').textContent='';
+  document.getElementById('bkRestoreStatus').textContent='';
+  document.getElementById('bkOverlay').classList.add('open');
+}
+function closeBackupModal(){document.getElementById('bkOverlay').classList.remove('open');}
+
 document.getElementById('tab-daily').addEventListener('click',function(){tab='daily';document.getElementById('tab-daily').classList.add('active');document.getElementById('tab-recurring').classList.remove('active');render();});
 document.getElementById('tab-recurring').addEventListener('click',function(){tab='recurring';document.getElementById('tab-recurring').classList.add('active');document.getElementById('tab-daily').classList.remove('active');render();});
 document.getElementById('fabBtn').addEventListener('click',openAdd);
@@ -788,6 +935,16 @@ document.getElementById('fgroup').addEventListener('blur',function(){setTimeout(
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('closeGrpBtn').addEventListener('click',closeGrpOrder);
 document.getElementById('grpOverlay').addEventListener('click',function(e){if(e.target===this)closeGrpOrder();});
+document.getElementById('settingsBtn').addEventListener('click',openBackupModal);
+document.getElementById('closeBkBtn').addEventListener('click',closeBackupModal);
+document.getElementById('bkOverlay').addEventListener('click',function(e){if(e.target===this)closeBackupModal();});
+document.getElementById('bkDownloadBtn').addEventListener('click',downloadBackup);
+document.getElementById('bkShareBtn').addEventListener('click',shareBackup);
+document.getElementById('bkRestoreBtn').addEventListener('click',function(){document.getElementById('bkFileInput').click();});
+document.getElementById('bkFileInput').addEventListener('change',function(e){
+  if(e.target.files && e.target.files[0]){restoreFromFile(e.target.files[0]);}
+  e.target.value='';
+});
 
 load();render();
 setInterval(function(){autoReset();render();},60000);
