@@ -180,6 +180,16 @@
   .fab:active { transform:translateX(-50%) scale(0.94); }
   .fab svg { width:22px; height:22px; color:#1e3012; }
 
+  /* update notification fab */
+  .update-fab { display:none; position:fixed; bottom:calc(var(--sb) + 70px);
+    right:calc(14px + var(--sr)); z-index:202; height:36px; padding:0 16px;
+    background:linear-gradient(145deg,#2fbf6e,#1f9c56); border:none; border-radius:99px;
+    align-items:center; justify-content:center; gap:6px; cursor:pointer; font-size:13px;
+    font-weight:700; color:#fff; box-shadow:0 4px 14px rgba(31,156,86,.45);
+    font-family:'Vazirmatn',sans-serif; white-space:nowrap; }
+  .update-fab.show { display:flex; }
+  .update-fab svg { width:15px; height:15px; }
+
   /* ── Overlay / Modal ── */
   .overlay { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:300;
     display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .3s;
@@ -315,6 +325,13 @@
   </svg>
 </button>
 
+<button class="update-fab" id="updateFab">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+  </svg>
+  نسخه جدید
+</button>
+
 <div class="footer">
   <div class="footer-text">Designed &amp; Developed by <span>Seyed Sadegh Majedi</span></div>
 </div>
@@ -384,7 +401,16 @@
 <div class="overlay" id="bkOverlay">
   <div class="modal">
     <div class="mhandle"></div>
-    <div class="mtitle">پشتیبان‌گیری و بازگردانی</div>
+    <div class="mtitle">تنظیمات و پشتیبان‌گیری</div>
+
+    <div class="bk-section">
+      <div class="bk-label">به‌روزرسانی اپ</div>
+      <p class="bk-desc" id="updVersionInfo">نسخه فعلی: در حال بررسی...</p>
+      <button class="bk-restore-btn" id="manualCheckBtn">بررسی آپدیت</button>
+      <div class="bk-status" id="updCheckStatus"></div>
+    </div>
+
+    <div class="bk-divider"></div>
 
     <div class="bk-section">
       <div class="bk-label">وضعیت داده‌های این نسخه</div>
@@ -922,10 +948,46 @@ function getDiagInfo(){
     return 'تعداد تسک‌ها: '+fp(count)+'\nحجم داده: '+fp(sizeKB)+' KB\nحالت اجرا: '+standalone+'\nآدرس: '+location.href;
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
+/* ── Update Check ── */
+var CURRENT_VERSION = '1.1.0';
+
+function checkForUpdate(showNoUpdateAlert){
+  fetch('version.json?t=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.version && data.version !== CURRENT_VERSION) {
+        var fab = document.getElementById('updateFab');
+        if (fab) fab.classList.add('show');
+        document.getElementById('updVersionInfo').textContent = 'نسخه فعلی: '+CURRENT_VERSION+' — نسخه جدید موجود است: '+data.version;
+        if (showNoUpdateAlert) {
+          showBkStatus('updCheckStatus', 'نسخه '+data.version+' موجود است.', true);
+        }
+      } else if (showNoUpdateAlert) {
+        showBkStatus('updCheckStatus', '✓ نسخه شما به‌روز است', true);
+      }
+    })
+    .catch(function(){
+      if (showNoUpdateAlert) showBkStatus('updCheckStatus', 'خطا در بررسی به‌روزرسانی', false);
+    });
+}
+
+function doUpdate(){
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(r){ r.unregister(); });
+      window.location.reload();
+    });
+  } else {
+    window.location.reload();
+  }
+}
+
 function openBackupModal(){
   document.getElementById('bkDiagInfo').textContent=getDiagInfo();
   document.getElementById('bkSaveStatus').textContent='';
   document.getElementById('bkRestoreStatus').textContent='';
+  document.getElementById('updCheckStatus').textContent='';
+  document.getElementById('updVersionInfo').textContent='نسخه فعلی: '+CURRENT_VERSION;
   document.getElementById('bkOverlay').classList.add('open');
 }
 function closeBackupModal(){document.getElementById('bkOverlay').classList.remove('open');}
@@ -963,8 +1025,11 @@ document.getElementById('bkFileInput').addEventListener('change',function(e){
   if(e.target.files && e.target.files[0]){restoreFromFile(e.target.files[0]);}
   e.target.value='';
 });
+document.getElementById('manualCheckBtn').addEventListener('click',function(){checkForUpdate(true);});
+document.getElementById('updateFab').addEventListener('click',doUpdate);
 
 load();render();
+checkForUpdate(false);
 setInterval(function(){autoReset();render();},60000);
 
 function fixTabsTop(){
