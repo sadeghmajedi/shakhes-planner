@@ -263,6 +263,35 @@
   .field input:focus, .field select:focus { box-shadow: inset 4px 4px 8px var(--sh1), inset -2px -2px 6px var(--sh2), 0 0 0 2px rgba(225,179,36,.3); }
   .field select { appearance:none; -webkit-appearance:none; }
 
+  /* subtask form editor */
+  .sub-editor-list { margin-bottom:8px; }
+  .sub-editor-item { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .sub-editor-item input { flex:1; padding:9px 12px; border-radius:var(--rs); border:none;
+    font-size:16px; font-family:'Vazirmatn',sans-serif; color:var(--green);
+    box-shadow: inset 2px 2px 5px var(--sh1), inset -2px -2px 5px var(--sh2); }
+  .sub-editor-del { width:32px; height:32px; border-radius:50%; border:none; flex-shrink:0;
+    background:rgba(0,0,0,.05); color:var(--lgray); cursor:pointer; display:flex;
+    align-items:center; justify-content:center; }
+  .sub-editor-add { width:100%; padding:10px; border-radius:var(--rs); border:none;
+    background:rgba(225,179,36,.15); color:#7A6000; font-weight:700; font-size:15px;
+    font-family:'Vazirmatn',sans-serif; cursor:pointer; }
+
+  /* subtask display in card (progress bar + dot list) */
+  .sub-display { margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,.06); }
+  .sub-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .sub-bar { flex:1; height:6px; background:rgba(0,0,0,.08); border-radius:99px; overflow:hidden; }
+  .sub-bar-fill { height:100%; background:var(--gold); border-radius:99px; transition:width .25s; }
+  .sub-count { font-size:12px; color:var(--lgray); font-weight:600; white-space:nowrap; }
+  .sub-item { display:flex; align-items:center; gap:8px; padding:6px 4px; font-size:14px; }
+  .sub-dot { width:16px; height:16px; border-radius:50%; border:2px solid var(--lgray);
+    flex-shrink:0; cursor:pointer; }
+  .sub-dot.done { background:var(--gold); border-color:var(--gold); position:relative; }
+  .sub-dot.done::after { content:'✓'; position:absolute; inset:0; display:flex;
+    align-items:center; justify-content:center; font-size:10px; color:white; }
+  .sub-name { flex:1; cursor:pointer; }
+  .sub-name.done { color:var(--lgray); text-decoration:line-through; }
+  .sub-date { font-size:11px; color:var(--gold); font-weight:600; white-space:nowrap; }
+
   .ttype { display:flex; gap:8px; margin-bottom:14px; }
   .tbtn { flex:1; padding:9px; border-radius:12px; font-size:18px; font-weight:600;
     font-family:'Vazirmatn',sans-serif; border:none; color:var(--lgray); cursor:pointer;
@@ -438,6 +467,11 @@
         <div class="grp-dropdown" id="grpDropdown"></div>
       </div>
     </div>
+    <div class="field">
+      <label>زیرشاخه‌ها (اختیاری)</label>
+      <div class="sub-editor-list" id="subEditorList"></div>
+      <button type="button" class="sub-editor-add" id="subAddBtn">+ افزودن زیرشاخه</button>
+    </div>
     <div class="recuropts" id="recuropts">
       <div class="field">
         <label>تکرار</label>
@@ -581,6 +615,7 @@ function getDateLine(){
 }
 
 let tasks=[],tab='daily',editId=null,ctype='daily';
+let formSubtasks=[]; // working copy of subtasks while the add/edit modal is open
 
 function save(){localStorage.setItem('shakhes_tasks',JSON.stringify(tasks));}
 function load(){try{tasks=JSON.parse(localStorage.getItem('shakhes_tasks'))||[];}catch(e){tasks=[];}}
@@ -628,6 +663,14 @@ function autoReset(){
   tasks.forEach(t=>{
     if(t.type==='daily'&&t.done&&t.doneDate!==todayStr()){t.done=false;t.doneDate=null;changed=true;}
     if(t.type==='recurring'&&t.done&&t.nextDue&&t.nextDue<=tstr){t.done=false;t.doneDate=null;changed=true;}
+    if(t.subtasks&&t.subtasks.length){
+      const allDone=t.subtasks.every(s=>s.doneDate);
+      const hasStaleDone=t.subtasks.some(s=>s.doneDate&&s.doneDate!==todayStr());
+      if(allDone&&hasStaleDone){
+        t.subtasks.forEach(s=>{s.doneDate=null;});
+        changed=true;
+      }
+    }
   });
   if(changed)save();
 }
@@ -703,7 +746,41 @@ function makeCard(t,showRecurBadge){
     metaEl.innerHTML=meta;metaEl.addEventListener('click',function(){toggleTask(t.id);});
     card.appendChild(metaEl);
   }
+  if(t.subtasks&&t.subtasks.length){
+    card.appendChild(renderSubDisplay(t));
+  }
   return card;
+}
+
+function renderSubDisplay(t){
+  const wrap=document.createElement('div');wrap.className='sub-display';
+  const doneCount=t.subtasks.filter(s=>s.doneDate).length;
+  const total=t.subtasks.length;
+  const pct=total?Math.round(doneCount/total*100):0;
+
+  const barRow=document.createElement('div');barRow.className='sub-bar-row';
+  const bar=document.createElement('div');bar.className='sub-bar';
+  const fill=document.createElement('div');fill.className='sub-bar-fill';fill.style.width=pct+'%';
+  bar.appendChild(fill);barRow.appendChild(bar);
+  const count=document.createElement('span');count.className='sub-count';count.textContent=fp(doneCount)+' از '+fp(total);
+  barRow.appendChild(count);wrap.appendChild(barRow);
+
+  t.subtasks.forEach(function(s){
+    const item=document.createElement('div');item.className='sub-item';
+    const dot=document.createElement('div');dot.className='sub-dot'+(s.doneDate?' done':'');
+    const name=document.createElement('span');name.className='sub-name'+(s.doneDate?' done':'');name.textContent=s.title;
+    const clickHandler=function(e){e.stopPropagation();toggleSubtask(t.id,s.id);};
+    dot.addEventListener('click',clickHandler);name.addEventListener('click',clickHandler);
+    item.appendChild(dot);item.appendChild(name);
+    if(s.doneDate){
+      const sh=toShamsiFixed(new Date(s.doneDate));
+      const dateEl=document.createElement('span');dateEl.className='sub-date';
+      dateEl.textContent=fp(sh.d)+' '+SHAMSI_M[sh.m-1];
+      item.appendChild(dateEl);
+    }
+    wrap.appendChild(item);
+  });
+  return wrap;
 }
 
 function renderGrouped(taskList,container,showRecurBadgeFor){
@@ -816,6 +893,7 @@ function openAdd(){
   document.getElementById('finput').value='';document.getElementById('fnote').value='';
   document.getElementById('fgroup').value='';document.getElementById('finterval').value='weekly';
   document.getElementById('fcustomDate').value='';
+  formSubtasks=[];renderSubEditor();
   updateTypeUI();document.getElementById('overlay').classList.add('open');
   setTimeout(()=>document.getElementById('finput').focus(),350);
 }
@@ -826,6 +904,8 @@ function openEdit(id){
   document.getElementById('finput').value=t.title;document.getElementById('fnote').value=t.note||'';
   document.getElementById('fgroup').value=t.group||'';document.getElementById('finterval').value=t.interval||'weekly';
   document.getElementById('fcustomDate').value=(t.interval==='custom'&&t.nextDue)?t.nextDue:'';
+  formSubtasks=(t.subtasks||[]).map(s=>({id:s.id,title:s.title,doneDate:s.doneDate||null}));
+  renderSubEditor();
   updateTypeUI();document.getElementById('overlay').classList.add('open');
 }
 function closeModal(){document.getElementById('overlay').classList.remove('open');}
@@ -835,6 +915,24 @@ function updateTypeUI(){
   document.getElementById('btn-recurring').classList.toggle('active',ctype==='recurring');
   document.getElementById('recuropts').classList.toggle('show',ctype==='recurring');
   document.getElementById('customDateWrap').style.display=document.getElementById('finterval').value==='custom'?'block':'none';
+}
+function renderSubEditor(){
+  const list=document.getElementById('subEditorList');list.innerHTML='';
+  formSubtasks.forEach(function(s,i){
+    const row=document.createElement('div');row.className='sub-editor-item';
+    const input=document.createElement('input');input.type='text';input.value=s.title;input.placeholder='مثلاً: امگا ۳';
+    input.addEventListener('input',function(){formSubtasks[i].title=this.value;});
+    const del=document.createElement('button');del.type='button';del.className='sub-editor-del';
+    del.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    del.addEventListener('click',function(){formSubtasks.splice(i,1);renderSubEditor();});
+    row.appendChild(input);row.appendChild(del);list.appendChild(row);
+  });
+}
+function addSubEditorItem(){
+  formSubtasks.push({id:Date.now().toString()+Math.random().toString(36).slice(2,6),title:'',doneDate:null});
+  renderSubEditor();
+  const inputs=document.querySelectorAll('#subEditorList .sub-editor-item input');
+  if(inputs.length)inputs[inputs.length-1].focus();
 }
 function saveTask(){
   const title=document.getElementById('finput').value.trim();if(!title){document.getElementById('finput').focus();return;}
@@ -847,13 +945,21 @@ function saveTask(){
     else{const n=new Date();n.setDate(n.getDate()+(IDAYS[interval]||7));nextDue=localDateStr(n);}
   }
   const group=document.getElementById('fgroup').value.trim();
+  const subtasks=formSubtasks.filter(s=>s.title&&s.title.trim()).map(s=>({id:s.id,title:s.title.trim(),doneDate:s.doneDate||null}));
   if(editId){
     const t=tasks.find(x=>x.id===editId);
-    if(t){t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;if(ctype==='recurring')t.nextDue=nextDue;}
+    if(t){t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;if(ctype==='recurring')t.nextDue=nextDue;t.subtasks=subtasks;}
   } else {
-    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue});
+    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,subtasks});
   }
   save();closeModal();render();
+}
+
+function toggleSubtask(taskId,subId){
+  const t=tasks.find(x=>x.id===taskId);if(!t||!t.subtasks)return;
+  const s=t.subtasks.find(x=>x.id===subId);if(!s)return;
+  s.doneDate=s.doneDate?null:todayStr();
+  save();render();
 }
 
 function openGrpOrder(){renderGrpOrderList();document.getElementById('grpOverlay').classList.add('open');}
@@ -1042,7 +1148,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.2.2';
+var CURRENT_VERSION = '1.3.0';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -1175,6 +1281,7 @@ document.getElementById('tab-recurring').addEventListener('click',function(){tab
 document.getElementById('fabBtn').addEventListener('click',openAdd);
 document.getElementById('cancelBtn').addEventListener('click',closeModal);
 document.getElementById('saveBtn').addEventListener('click',saveTask);
+document.getElementById('subAddBtn').addEventListener('click',addSubEditorItem);
 document.getElementById('btn-daily').addEventListener('click',function(){setType('daily');});
 document.getElementById('btn-recurring').addEventListener('click',function(){setType('recurring');});
 document.getElementById('finterval').addEventListener('change',function(){
