@@ -660,18 +660,18 @@ function updateSuggestions(){}
 
 function autoReset(){
   const tstr=localDateStr();let changed=false;
+  const today=todayStr();
+  const lastCheck=localStorage.getItem('shakhes_last_check_date');
+  const isNewDay=lastCheck!==today;
   tasks.forEach(t=>{
     if(t.type==='daily'&&t.done&&t.doneDate!==todayStr()){t.done=false;t.doneDate=null;changed=true;}
     if(t.type==='recurring'&&t.done&&t.nextDue&&t.nextDue<=tstr){t.done=false;t.doneDate=null;changed=true;}
-    if(t.subtasks&&t.subtasks.length){
-      const allDone=t.subtasks.every(s=>s.doneDate);
-      const hasStaleDone=t.subtasks.some(s=>s.doneDate&&s.doneDate!==todayStr());
-      if(allDone&&hasStaleDone){
-        t.subtasks.forEach(s=>{s.doneDate=null;});
-        changed=true;
-      }
+    if(isNewDay&&t.subtasks&&t.subtasks.length&&t.subtasks.every(s=>s.doneDate)){
+      t.subtasks.forEach(s=>{s.doneDate=null;});
+      changed=true;
     }
   });
+  if(isNewDay){localStorage.setItem('shakhes_last_check_date',today);}
   if(changed)save();
 }
 
@@ -876,7 +876,12 @@ function toggleTask(id){
 }
 function deleteTask(id){tasks=tasks.filter(x=>x.id!==id);save();render();}
 function manualReset(){
-  tasks.forEach(t=>{if(t.type==='daily'){t.done=false;t.doneDate=null;}});
+  tasks.forEach(t=>{
+    if(t.type==='daily'){t.done=false;t.doneDate=null;}
+    if(t.subtasks&&t.subtasks.length&&t.subtasks.every(s=>s.doneDate)){
+      t.subtasks.forEach(s=>{s.doneDate=null;});
+    }
+  });
   const order=[...allGroupNames().map(g=>normalize(g)),'__none__'];
   tasks.sort((a,b)=>{
     if(a.type!=='daily'||b.type!=='daily')return 0;
@@ -1148,7 +1153,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.3.0';
+var CURRENT_VERSION = '1.3.1';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
