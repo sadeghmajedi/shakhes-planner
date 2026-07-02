@@ -45,8 +45,8 @@
 
   /* ── Tabs wrapper ── */
   .tabs-wrap { position:sticky; top:var(--hdr-h, 120px); z-index:90;
-    background:var(--bg); padding:12px calc(20px + var(--sr)) 12px calc(20px + var(--sl));
-    box-shadow:0 4px 12px rgba(0,0,0,.04); }
+    background:var(--green); padding:12px calc(20px + var(--sr)) 12px calc(20px + var(--sl));
+    box-shadow:0 4px 12px rgba(0,0,0,.15); }
 
   /* search bar */
   .search-wrap { max-height:0; overflow:hidden; transition:max-height .25s ease;
@@ -168,9 +168,8 @@
   /* ── Tabs ── */
   .tabs { display:flex; gap:8px; }
   .tab { flex:1; padding:9px 0; border-radius:14px; font-size:18px; font-weight:600;
-    color:var(--lgray); background:var(--bg); border:none; cursor:pointer;
-    font-family:'Vazirmatn',sans-serif;
-    box-shadow: 4px 4px 10px var(--sh1), -3px -3px 8px var(--sh2); }
+    color:var(--cream); background:rgba(238,230,209,.10); border:none; cursor:pointer;
+    font-family:'Vazirmatn',sans-serif; box-shadow:none; }
   .tab.active {
     color:var(--green); font-weight:700;
     background:linear-gradient(145deg,#f0c42a,#d4a818);
@@ -1447,7 +1446,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.7.1';
+var CURRENT_VERSION = '1.7.2';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
