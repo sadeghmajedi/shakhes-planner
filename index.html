@@ -103,6 +103,49 @@
   .pin-key.del { background:rgba(39,60,26,.15); color:var(--green); font-size:18px; }
   .pin-error { color:#c0392b; font-size:13px; margin-top:14px; min-height:18px; }
 
+  /* ── Stats page ── */
+  #statsScreen { position:fixed; inset:0; z-index:400; background:var(--bg);
+    display:none; flex-direction:column; }
+  #statsScreen.show { display:flex; }
+  .stats-hdr { background:var(--green);
+    padding:calc(var(--st)+10px) calc(16px + var(--sr)) 12px calc(16px + var(--sl));
+    display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  @supports (padding-top:env(safe-area-inset-top)){
+    .stats-hdr { padding-top:calc(env(safe-area-inset-top)+10px); }
+  }
+  .stats-back-btn { width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; background:rgba(238,230,209,.12); }
+  .stats-back-btn svg { width:17px; height:17px; color:var(--cream); }
+  .stats-title { font-size:15px; font-weight:700; color:var(--cream); }
+  .stats-spacer { width:30px; }
+  .stats-body { flex:1; overflow-y:auto; padding:16px calc(16px + var(--sr)) calc(24px + var(--sb)) calc(16px + var(--sl));
+    -webkit-overflow-scrolling:touch; }
+
+  .range-toggle { display:flex; background:var(--sh1); border-radius:12px; padding:3px; margin-bottom:16px; }
+  .range-btn { flex:1; text-align:center; padding:9px; border-radius:9px; font-size:13px; font-weight:700;
+    color:var(--green); border:none; background:transparent; font-family:'Vazirmatn',sans-serif; cursor:pointer; }
+  .range-btn.active { background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+
+  .avg-card { background:var(--bg); border-radius:16px; padding:16px; margin-bottom:16px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow: 5px 5px 12px var(--sh1), -5px -5px 12px var(--sh2); }
+  .avg-label { font-size:12px; color:#8a8577; margin-bottom:4px; }
+  .avg-value { font-size:26px; font-weight:800; color:var(--green); }
+  .avg-icon { width:44px; height:44px; border-radius:50%; background:var(--cream);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .avg-icon svg { width:22px; height:22px; color:var(--gold); }
+
+  .chart-card { background:var(--bg); border-radius:16px; padding:16px 12px;
+    box-shadow: 5px 5px 12px var(--sh1), -5px -5px 12px var(--sh2); }
+  .chart-title { font-size:13px; font-weight:700; color:var(--green); margin-bottom:14px; padding:0 4px; }
+  .bars { display:flex; align-items:flex-end; gap:4px; height:130px; }
+  .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; }
+  .bar { width:100%; border-radius:4px 4px 0 0; background:linear-gradient(180deg,var(--gold),#c99a1a); min-height:2px; }
+  .bar.empty { background:var(--sh1); }
+  .bar-label { font-size:8px; color:#8a8577; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .bar-val { font-size:8px; color:var(--green); font-weight:700; margin-bottom:3px; }
+  .stats-empty { text-align:center; padding:40px 20px; color:#8a8577; font-size:13px; }
+
   /* settings toggle row */
   .bk-toggle-row { display:flex; align-items:center; justify-content:space-between; }
   .toggle-switch { position:relative; width:46px; height:26px; flex-shrink:0; }
@@ -159,6 +202,10 @@
   .card-row { display:flex; align-items:center; gap:9px; width:100%; }
   .card.dragging { opacity:.35; }
   .card.dragover { box-shadow: 0 0 0 2px var(--gold), 5px 5px 12px var(--sh1); }
+  .card.age-3 { background:#FDF3D0; }
+  .card.age-4 { background:#FBE0B8; }
+  .card.age-5 { background:#FAD0C8; }
+  .card.age-6 { background:#F5B8B0; }
 
   /* drag handle */
   .dhandle { display:flex; flex-direction:column; gap:3px; padding:4px 3px;
@@ -279,6 +326,10 @@
   /* subtask form editor */
   .sub-editor-list { margin-bottom:8px; }
   .sub-editor-item { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .sub-editor-item.sub-dragging { opacity:.4; }
+  .sub-editor-item.sub-dragover { box-shadow:0 -2px 0 var(--gold); }
+  .sub-dhandle { padding:2px 2px; }
+  .sub-dhandle span { width:11px; }
   .sub-editor-item input { flex:1; padding:9px 12px; border-radius:var(--rs); border:none;
     font-size:16px; font-family:'Vazirmatn',sans-serif; color:var(--green);
     box-shadow: inset 2px 2px 5px var(--sh1), inset -2px -2px 5px var(--sh2); }
@@ -399,9 +450,44 @@
   <div class="pin-error" id="pinError"></div>
 </div>
 
+<div id="statsScreen">
+  <div class="stats-hdr">
+    <button class="stats-back-btn" id="statsBackBtn" aria-label="بازگشت">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </button>
+    <div class="stats-title">آمار پیشرفت</div>
+    <div class="stats-spacer"></div>
+  </div>
+  <div class="stats-body">
+    <div class="range-toggle">
+      <button class="range-btn active" id="rangeWeekBtn">هفتگی</button>
+      <button class="range-btn" id="rangeMonthBtn">ماهانه</button>
+    </div>
+    <div class="avg-card">
+      <div>
+        <div class="avg-label">معدل روزانه شما</div>
+        <div class="avg-value" id="statsAvgValue">۰٪</div>
+      </div>
+      <div class="avg-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+        </svg>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title" id="statsChartTitle">۷ روز اخیر</div>
+      <div class="bars" id="statsBars"></div>
+    </div>
+  </div>
+</div>
+
 <div class="scroll-wrap" id="scrollWrap">
 
 <div class="hdr">
+
   <div class="hdr-inner">
     <div class="hdr-left">
       <img class="hdr-logo-icon" src="data:image/png;base64,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" alt="">
@@ -411,6 +497,14 @@
       </div>
     </div>
     <div class="hdr-right">
+      <button class="hdr-icon-btn" id="statsBtn" aria-label="آمار">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"/>
+          <path d="M18 17V9"/>
+          <path d="M13 17V5"/>
+          <path d="M8 17v-3"/>
+        </svg>
+      </button>
       <button class="hdr-icon-btn" id="searchBtn" aria-label="جستجو">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/>
@@ -691,11 +785,57 @@ function showGrpDropdown(filter){
 function hideGrpDropdown(){const dd=document.getElementById('grpDropdown');if(dd)dd.classList.remove('open');}
 function updateSuggestions(){}
 
+function calcPctForDate(taskList,dateStr){
+  const daily=taskList.filter(t=>t.type==='daily');
+  const dueR=taskList.filter(t=>t.type==='recurring'&&(
+    (!t.done&&(!t.nextDue||t.nextDue<=dateStr)) ||
+    (t.done&&t.doneDate===new Date(dateStr+'T12:00:00').toDateString())
+  ));
+  const all=[...daily,...dueR];
+  return all.length===0?0:Math.round(all.filter(t=>t.done).length/all.length*100);
+}
+function daysBetween(dateStr1,dateStr2){
+  const d1=new Date(dateStr1+'T12:00:00');const d2=new Date(dateStr2+'T12:00:00');
+  return Math.round((d2-d1)/86400000);
+}
+function getTaskAgeClass(t){
+  if(t.done)return'';
+  const tstr=localDateStr();
+  let sinceStr=null;
+  if(t.type==='daily'){
+    sinceStr=t.createdAt||tstr;
+  } else if(t.type==='recurring'){
+    if(!t.nextDue||t.nextDue>tstr)return'';
+    sinceStr=t.nextDue;
+  } else return'';
+  const age=daysBetween(sinceStr,tstr);
+  if(age>=6)return'age-6';
+  if(age>=5)return'age-5';
+  if(age>=4)return'age-4';
+  if(age>=3)return'age-3';
+  return'';
+}
+function recordDailyStat(dateStr,pct){
+  let hist={};
+  try{hist=JSON.parse(localStorage.getItem('shakhes_stats_history'))||{};}catch(e){hist={};}
+  hist[dateStr]=pct;
+  localStorage.setItem('shakhes_stats_history',JSON.stringify(hist));
+}
 function autoReset(){
   const tstr=localDateStr();let changed=false;
   const today=todayStr();
   const lastCheck=localStorage.getItem('shakhes_last_check_date');
   const isNewDay=lastCheck!==today;
+  if(isNewDay&&lastCheck){
+    const lastCheckDateStr=localDateStr(new Date(lastCheck));
+    const pctYesterday=calcPctForDate(tasks,lastCheckDateStr);
+    recordDailyStat(lastCheckDateStr,pctYesterday);
+    const gapStart=new Date(lastCheck);gapStart.setDate(gapStart.getDate()+1);
+    const todayDate=new Date(today);
+    for(let d=new Date(gapStart);d<todayDate;d.setDate(d.getDate()+1)){
+      recordDailyStat(localDateStr(d),0);
+    }
+  }
   tasks.forEach(t=>{
     if(t.type==='daily'&&t.done&&t.doneDate!==todayStr()){t.done=false;t.doneDate=null;changed=true;}
     if(t.type==='recurring'&&t.done&&t.nextDue&&t.nextDue<=tstr){t.done=false;t.doneDate=null;changed=true;}
@@ -710,12 +850,76 @@ function autoReset(){
 
 function updateProgress(){
   const tstr=localDateStr();
-  const daily=tasks.filter(t=>t.type==='daily');
-  const dueR=tasks.filter(t=>t.type==='recurring'&&(t.done||!t.nextDue||t.nextDue<=tstr));
-  const all=[...daily,...dueR];
-  const pct=all.length===0?0:Math.round(all.filter(t=>t.done).length/all.length*100);
+  const pct=calcPctForDate(tasks,tstr);
   document.getElementById('progTxt').textContent=fp(pct)+'٪';
   document.getElementById('ringFill').style.strokeDashoffset=94.25-(pct/100)*94.25;
+}
+
+let statsRange='week';
+function getStatsHistory(){
+  try{return JSON.parse(localStorage.getItem('shakhes_stats_history'))||{};}catch(e){return{};}
+}
+function openStats(){
+  document.getElementById('statsScreen').classList.add('show');
+  renderStats();
+}
+function closeStats(){
+  document.getElementById('statsScreen').classList.remove('show');
+}
+function renderStats(){
+  const hist=getStatsHistory();
+  const n=statsRange==='week'?7:30;
+  const days=[];
+  const base=new Date();
+  for(let i=n-1;i>=0;i--){
+    const d=new Date(base);d.setDate(d.getDate()-i);
+    const ds=localDateStr(d);
+    const isToday=i===0;
+    let pct;
+    if(isToday){pct=calcPctForDate(tasks,ds);}
+    else{pct=hist.hasOwnProperty(ds)?hist[ds]:null;}
+    days.push({dateStr:ds,date:d,pct,isToday});
+  }
+  document.getElementById('statsChartTitle').textContent=statsRange==='week'?'۷ روز اخیر':'۳۰ روز اخیر';
+
+  const recorded=days.filter(d=>d.pct!==null);
+  const avg=recorded.length?Math.round((recorded.reduce((s,d)=>s+d.pct,0)/recorded.length)*10)/10:0;
+  document.getElementById('statsAvgValue').textContent=fp(avg)+'٪';
+
+  const barsEl=document.getElementById('statsBars');
+  barsEl.innerHTML='';
+  if(!recorded.length){
+    barsEl.parentElement.querySelector('.stats-empty')?.remove();
+    const empty=document.createElement('div');empty.className='stats-empty';
+    empty.textContent='هنوز آماری ثبت نشده. از فردا آمار هر روز اینجا نمایش داده می‌شود.';
+    barsEl.parentElement.appendChild(empty);
+    barsEl.style.display='none';
+    return;
+  }
+  barsEl.style.display='';
+  barsEl.parentElement.querySelector('.stats-empty')?.remove();
+
+  days.forEach(d=>{
+    const col=document.createElement('div');col.className='bar-col';
+    const val=document.createElement('span');val.className='bar-val';
+    const bar=document.createElement('div');bar.className='bar'+(d.pct===null?' empty':'');
+    const label=document.createElement('span');label.className='bar-label';
+    if(d.pct===null){
+      val.textContent='';
+      bar.style.height='2%';
+    } else {
+      val.textContent=fp(d.pct)+'٪';
+      bar.style.height=Math.max(d.pct,2)+'%';
+    }
+    if(statsRange==='week'){
+      label.textContent=d.isToday?'امروز':DAYS[d.date.getDay()];
+    } else {
+      const sh=toShamsiFixed(d.date);
+      label.textContent=d.date.getDate()%5===0||d.isToday?fp(sh.d):'';
+    }
+    col.appendChild(val);col.appendChild(bar);col.appendChild(label);
+    barsEl.appendChild(col);
+  });
 }
 
 function render(){
@@ -727,7 +931,7 @@ function render(){
 
 function makeCard(t,showRecurBadge){
   const card=document.createElement('div');
-  card.className='card'+(t.done?' done':'');
+  card.className='card'+(t.done?' done':'')+(getTaskAgeClass(t)?' '+getTaskAgeClass(t):'');
   card.dataset.id=t.id;
   const row=document.createElement('div');row.className='card-row';
 
@@ -818,24 +1022,19 @@ function renderSubDisplay(t){
 
 function renderGrouped(taskList,container,showRecurBadgeFor){
   const grpOrder=allGroupNames();
-  const dailyGroups=new Set(tasks.filter(t=>t.type==='daily'&&t.group&&t.group.trim()).map(t=>normalize(t.group)));
   const buckets={};
   grpOrder.forEach(g=>{buckets[normalize(g)]=[];});
-  buckets['__none__']=[];buckets['__recur_only__']=[];
+  buckets['__none__']=[];
   taskList.forEach(t=>{
     const g=normalize(t.group||'');
-    const isRecurDue=showRecurBadgeFor&&showRecurBadgeFor.has(t.id);
-    if(isRecurDue&&g&&!dailyGroups.has(g)){buckets['__recur_only__'].push(t);}
-    else if(g){if(!buckets[g])buckets[g]=[];buckets[g].push(t);}
+    if(g){if(!buckets[g])buckets[g]=[];buckets[g].push(t);}
     else{buckets['__none__'].push(t);}
   });
-  const orderedKeys=[...grpOrder.map(g=>normalize(g)),'__none__','__recur_only__'];
+  const orderedKeys=[...grpOrder.map(g=>normalize(g)),'__none__'];
   orderedKeys.forEach(nk=>{
     const list=buckets[nk];if(!list||!list.length)return;
     const hdr=document.createElement('div');hdr.className='grp-hdr';
-    if(nk==='__recur_only__'){
-      const nm=document.createElement('span');nm.className='grp-name';nm.textContent='دوره‌ای امروز';hdr.appendChild(nm);
-    } else if(nk!=='__none__'){
+    if(nk!=='__none__'){
       const originalName=list[0].group||nk;
       const dot=document.createElement('div');dot.className='grp-dot';dot.style.background=groupColor(originalName);hdr.appendChild(dot);
       const nm=document.createElement('span');nm.className='grp-name';nm.textContent=originalName;hdr.appendChild(nm);
@@ -978,14 +1177,55 @@ function updateTypeUI(){
 function renderSubEditor(){
   const list=document.getElementById('subEditorList');list.innerHTML='';
   formSubtasks.forEach(function(s,i){
-    const row=document.createElement('div');row.className='sub-editor-item';
+    const row=document.createElement('div');row.className='sub-editor-item';row.dataset.id=s.id;
+    const handle=document.createElement('div');handle.className='dhandle sub-dhandle';
+    handle.innerHTML='<span></span><span></span><span></span>';
+    handle.addEventListener('mousedown',subDragStart);handle.addEventListener('touchstart',subDragStart,{passive:false});
     const input=document.createElement('input');input.type='text';input.value=s.title;input.placeholder='مثلاً: امگا ۳';
     input.addEventListener('input',function(){formSubtasks[i].title=this.value;});
     const del=document.createElement('button');del.type='button';del.className='sub-editor-del';
     del.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     del.addEventListener('click',function(){formSubtasks.splice(i,1);renderSubEditor();});
-    row.appendChild(input);row.appendChild(del);list.appendChild(row);
+    row.appendChild(handle);row.appendChild(input);row.appendChild(del);list.appendChild(row);
   });
+}
+let subDrag=null;
+function subDragStart(e){
+  if(formSubtasks.length<2)return;
+  e.preventDefault();const row=e.currentTarget.closest('.sub-editor-item');if(!row)return;
+  const id=row.dataset.id;
+  const ghost=row.cloneNode(true);const rect=row.getBoundingClientRect();
+  const cx=e.touches?e.touches[0].clientX:e.clientX;const cy=e.touches?e.touches[0].clientY:e.clientY;
+  ghost.style.cssText=`position:fixed;z-index:9999;pointer-events:none;width:${row.offsetWidth}px;opacity:.9;transform:scale(1.02);box-shadow:6px 6px 16px rgba(0,0,0,.15);left:${rect.left}px;top:${rect.top}px;background:var(--bg);border-radius:var(--rs);`;
+  document.body.appendChild(ghost);row.classList.add('sub-dragging');
+  subDrag={id,ghost,ox:cx-rect.left,oy:cy-rect.top,lastOver:null};
+  if(e.touches){document.addEventListener('touchmove',subDragMove,{passive:false});document.addEventListener('touchend',subDragEnd);}
+  else{document.addEventListener('mousemove',subDragMove);document.addEventListener('mouseup',subDragEnd);}
+}
+function subDragMove(e){
+  if(!subDrag)return;e.preventDefault();
+  const cx=e.touches?e.touches[0].clientX:e.clientX;const cy=e.touches?e.touches[0].clientY:e.clientY;
+  subDrag.ghost.style.left=(cx-subDrag.ox)+'px';subDrag.ghost.style.top=(cy-subDrag.oy)+'px';
+  subDrag.ghost.style.display='none';const el=document.elementFromPoint(cx,cy);subDrag.ghost.style.display='';
+  const or=el?.closest('.sub-editor-item');const oid=or?.dataset.id;
+  if(subDrag.lastOver&&subDrag.lastOver!==oid)document.querySelector(`.sub-editor-item[data-id="${subDrag.lastOver}"]`)?.classList.remove('sub-dragover');
+  if(oid&&oid!==subDrag.id){or.classList.add('sub-dragover');subDrag.lastOver=oid;}
+}
+function subDragEnd(e){
+  if(!subDrag)return;
+  const cx=e.changedTouches?e.changedTouches[0].clientX:e.clientX;const cy=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+  subDrag.ghost.style.display='none';const el=document.elementFromPoint(cx,cy);subDrag.ghost.style.display='';
+  const or=el?.closest('.sub-editor-item');const tid=or?.dataset.id;
+  if(tid&&tid!==subDrag.id){
+    const fi=formSubtasks.findIndex(s=>s.id===subDrag.id);const ti=formSubtasks.findIndex(s=>s.id===tid);
+    if(fi>-1&&ti>-1){const[m]=formSubtasks.splice(fi,1);formSubtasks.splice(ti,0,m);}
+  }
+  subDrag.ghost.remove();
+  document.querySelectorAll('.sub-editor-item').forEach(r=>r.classList.remove('sub-dragging','sub-dragover'));
+  subDrag=null;
+  document.removeEventListener('mousemove',subDragMove);document.removeEventListener('mouseup',subDragEnd);
+  document.removeEventListener('touchmove',subDragMove);document.removeEventListener('touchend',subDragEnd);
+  renderSubEditor();
 }
 function addSubEditorItem(){
   formSubtasks.push({id:Date.now().toString()+Math.random().toString(36).slice(2,6),title:'',doneDate:null});
@@ -1009,7 +1249,7 @@ function saveTask(){
     const t=tasks.find(x=>x.id===editId);
     if(t){t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;if(ctype==='recurring')t.nextDue=nextDue;t.subtasks=subtasks;}
   } else {
-    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,subtasks});
+    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,subtasks,createdAt:localDateStr()});
   }
   save();closeModal();render();
 }
@@ -1207,7 +1447,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.5.2';
+var CURRENT_VERSION = '1.7.1';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -1359,6 +1599,20 @@ document.getElementById('overlay').addEventListener('click',function(e){if(e.tar
 document.getElementById('closeGrpBtn').addEventListener('click',closeGrpOrder);
 document.getElementById('grpOverlay').addEventListener('click',function(e){if(e.target===this)closeGrpOrder();});
 document.getElementById('settingsBtn').addEventListener('click',openBackupModal);
+document.getElementById('statsBtn').addEventListener('click',openStats);
+document.getElementById('statsBackBtn').addEventListener('click',closeStats);
+document.getElementById('rangeWeekBtn').addEventListener('click',function(){
+  statsRange='week';
+  document.getElementById('rangeWeekBtn').classList.add('active');
+  document.getElementById('rangeMonthBtn').classList.remove('active');
+  renderStats();
+});
+document.getElementById('rangeMonthBtn').addEventListener('click',function(){
+  statsRange='month';
+  document.getElementById('rangeMonthBtn').classList.add('active');
+  document.getElementById('rangeWeekBtn').classList.remove('active');
+  renderStats();
+});
 document.getElementById('searchBtn').addEventListener('click',function(){
   const wrap=document.getElementById('searchWrap');
   const willOpen=!wrap.classList.contains('open');
