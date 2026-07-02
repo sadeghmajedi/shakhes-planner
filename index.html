@@ -1446,7 +1446,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.7.2';
+var CURRENT_VERSION = '1.7.3';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -1470,9 +1470,17 @@ function checkForUpdate(showNoUpdateAlert){
 
 function doUpdate(){
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(regs){
-      regs.forEach(function(r){ r.unregister(); });
-      window.location.reload();
+    Promise.all([
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all(regs.map(function(r){ return r.unregister(); }));
+      }),
+      ('caches' in window) ? caches.keys().then(function(keys){
+        return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+      }) : Promise.resolve()
+    ]).then(function(){
+      window.location.href = window.location.href.split('?')[0] + '?_u=' + Date.now();
+    }).catch(function(){
+      window.location.href = window.location.href.split('?')[0] + '?_u=' + Date.now();
     });
   } else {
     window.location.reload();
