@@ -480,6 +480,10 @@
       <div class="chart-title" id="statsChartTitle">۷ روز اخیر</div>
       <div class="bars" id="statsBars"></div>
     </div>
+    <div class="chart-card" id="trendCard" style="display:none; margin-top:16px;">
+      <div class="chart-title">روند معدل روزانه (۳۰ روز)</div>
+      <div id="trendChart"></div>
+    </div>
   </div>
 </div>
 
@@ -803,6 +807,7 @@ function getTaskAgeClass(t){
   let sinceStr=null;
   if(t.type==='daily'){
     sinceStr=t.createdAt||tstr;
+    if(t.lastDoneDate&&t.lastDoneDate>sinceStr){sinceStr=t.lastDoneDate;}
   } else if(t.type==='recurring'){
     if(!t.nextDue||t.nextDue>tstr)return'';
     sinceStr=t.nextDue;
@@ -898,7 +903,7 @@ function renderStats(){
   barsEl.style.display='';
   barsEl.parentElement.querySelector('.stats-empty')?.remove();
 
-  days.forEach(d=>{
+  days.forEach(function(d,idx){
     const col=document.createElement('div');col.className='bar-col';
     const val=document.createElement('span');val.className='bar-val';
     const bar=document.createElement('div');bar.className='bar'+(d.pct===null?' empty':'');
@@ -907,18 +912,78 @@ function renderStats(){
       val.textContent='';
       bar.style.height='2%';
     } else {
-      val.textContent=fp(d.pct)+'٪';
+      val.textContent=(statsRange==='week')?fp(d.pct)+'٪':'';
       bar.style.height=Math.max(d.pct,2)+'%';
     }
     if(statsRange==='week'){
       label.textContent=d.isToday?'امروز':DAYS[d.date.getDay()];
     } else {
       const sh=toShamsiFixed(d.date);
-      label.textContent=d.date.getDate()%5===0||d.isToday?fp(sh.d):'';
+      const showLabel=d.isToday||(days.length-1-idx)%5===0;
+      label.textContent=showLabel?fp(sh.d):'';
     }
     col.appendChild(val);col.appendChild(bar);col.appendChild(label);
     barsEl.appendChild(col);
   });
+
+  const trendCard=document.getElementById('trendCard');
+  if(statsRange==='month'){
+    trendCard.style.display='';
+    renderTrendChart(days);
+  } else {
+    trendCard.style.display='none';
+  }
+}
+
+function renderTrendChart(days){
+  const el=document.getElementById('trendChart');el.innerHTML='';
+  const W=320,H=140,padL=28,padR=10,padT=12,padB=22;
+  const innerW=W-padL-padR,innerH=H-padT-padB;
+  const recorded=days.filter(d=>d.pct!==null);
+  if(recorded.length<2){
+    el.innerHTML='<div class="stats-empty">برای نمایش روند، حداقل ۲ روز آمار لازم است.</div>';
+    return;
+  }
+  const pts=days.map(function(d,i){
+    return {x:i,pct:d.pct,date:d.date,isToday:d.isToday};
+  }).filter(function(p){return p.pct!==null;});
+
+  const n=days.length;
+  const xFor=function(i){return padL+(n<=1?0:(i/(n-1))*innerW);};
+  const yFor=function(v){return padT+innerH-(v/100)*innerH;};
+
+  let gridLines='';
+  [0,25,50,75,100].forEach(function(v){
+    const y=yFor(v);
+    gridLines+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="var(--sh1)" stroke-width="1" opacity="0.5"/>';
+    gridLines+='<text x="'+(padL-5)+'" y="'+(y+3)+'" text-anchor="end" font-size="8" fill="#8a8577">'+fp(v)+'</text>';
+  });
+
+  let path='';
+  pts.forEach(function(p,i){
+    const x=xFor(p.x),y=yFor(p.pct);
+    path+=(i===0?'M':'L')+x.toFixed(1)+' '+y.toFixed(1)+' ';
+  });
+
+  let dots='';
+  pts.forEach(function(p){
+    const x=xFor(p.x),y=yFor(p.pct);
+    dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(p.isToday?3.5:2)+'" fill="'+(p.isToday?'var(--green)':'var(--gold)')+'"/>';
+  });
+
+  let xLabels='';
+  days.forEach(function(d,idx){
+    if(d.isToday||(days.length-1-idx)%5===0){
+      const sh=toShamsiFixed(d.date);
+      xLabels+='<text x="'+xFor(idx).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="8" fill="#8a8577">'+fp(sh.d)+'</text>';
+    }
+  });
+
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible;">'+
+    gridLines+
+    '<path d="'+path+'" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+    dots+xLabels+
+    '</svg>';
 }
 
 function render(){
@@ -1116,7 +1181,7 @@ function renderRecurring(){
 
 function toggleTask(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
-  if(t.type==='daily'){t.done=!t.done;t.doneDate=t.done?todayStr():null;}
+  if(t.type==='daily'){t.done=!t.done;t.doneDate=t.done?todayStr():null;if(t.done){t.lastDoneDate=localDateStr();}}
   else{
     if(!t.done){
       if(t.interval!=='custom'){const n=new Date();n.setDate(n.getDate()+(IDAYS[t.interval]||7));t.nextDue=localDateStr(n);}
@@ -1446,7 +1511,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.7.3';
+var CURRENT_VERSION = '1.8.0';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
