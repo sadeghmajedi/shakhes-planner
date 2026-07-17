@@ -138,12 +138,13 @@
   .chart-card { background:var(--bg); border-radius:16px; padding:16px 12px;
     box-shadow: 5px 5px 12px var(--sh1), -5px -5px 12px var(--sh2); }
   .chart-title { font-size:13px; font-weight:700; color:var(--green); margin-bottom:14px; padding:0 4px; }
-  .bars { display:flex; align-items:flex-end; gap:4px; height:130px; }
+  .bars { display:flex; align-items:flex-end; gap:4px; height:150px; padding-top:14px; }
   .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; }
+  .bar-wrap { flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; }
   .bar { width:100%; border-radius:4px 4px 0 0; background:linear-gradient(180deg,var(--gold),#c99a1a); min-height:2px; }
   .bar.empty { background:var(--sh1); }
-  .bar-label { font-size:8px; color:#8a8577; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-  .bar-val { font-size:8px; color:var(--green); font-weight:700; margin-bottom:3px; }
+  .bar-label { font-size:8px; color:#8a8577; height:12px; line-height:12px; margin-top:4px; white-space:nowrap; overflow:visible; max-width:none; flex-shrink:0; }
+  .bar-val { font-size:8px; color:var(--green); font-weight:700; height:11px; line-height:11px; margin-bottom:2px; flex-shrink:0; }
   .stats-empty { text-align:center; padding:40px 20px; color:#8a8577; font-size:13px; }
 
   /* settings toggle row */
@@ -903,16 +904,27 @@ function renderStats(){
   barsEl.style.display='';
   barsEl.parentElement.querySelector('.stats-empty')?.remove();
 
+  let highlightSet=new Set();
+  if(statsRange==='month'){
+    const withPct=days.map(function(d,i){return {i:i,pct:d.pct};}).filter(function(o){return o.pct!==null;});
+    const sortedHigh=[...withPct].sort(function(a,b){return b.pct-a.pct;});
+    const sortedLow=[...withPct].sort(function(a,b){return a.pct-b.pct;});
+    sortedHigh.slice(0,3).forEach(function(o){highlightSet.add(o.i);});
+    sortedLow.slice(0,3).forEach(function(o){highlightSet.add(o.i);});
+  }
+
   days.forEach(function(d,idx){
     const col=document.createElement('div');col.className='bar-col';
     const val=document.createElement('span');val.className='bar-val';
+    const wrap=document.createElement('div');wrap.className='bar-wrap';
     const bar=document.createElement('div');bar.className='bar'+(d.pct===null?' empty':'');
     const label=document.createElement('span');label.className='bar-label';
     if(d.pct===null){
       val.textContent='';
       bar.style.height='2%';
     } else {
-      val.textContent=(statsRange==='week')?fp(d.pct)+'٪':'';
+      if(statsRange==='week'){val.textContent=fp(d.pct);}
+      else {val.textContent=highlightSet.has(idx)?fp(d.pct):'';}
       bar.style.height=Math.max(d.pct,2)+'%';
     }
     if(statsRange==='week'){
@@ -922,7 +934,8 @@ function renderStats(){
       const showLabel=d.isToday||(days.length-1-idx)%5===0;
       label.textContent=showLabel?fp(sh.d):'';
     }
-    col.appendChild(val);col.appendChild(bar);col.appendChild(label);
+    wrap.appendChild(bar);
+    col.appendChild(val);col.appendChild(wrap);col.appendChild(label);
     barsEl.appendChild(col);
   });
 
@@ -1511,7 +1524,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.8.0';
+var CURRENT_VERSION = '1.8.1';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
