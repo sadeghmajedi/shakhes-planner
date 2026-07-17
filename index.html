@@ -138,13 +138,18 @@
   .chart-card { background:var(--bg); border-radius:16px; padding:16px 12px;
     box-shadow: 5px 5px 12px var(--sh1), -5px -5px 12px var(--sh2); }
   .chart-title { font-size:13px; font-weight:700; color:var(--green); margin-bottom:14px; padding:0 4px; }
-  .bars { display:flex; align-items:flex-end; gap:4px; height:150px; padding-top:14px; }
+  .bars { display:flex; align-items:flex-end; gap:4px; height:150px; padding-top:18px; }
   .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; }
   .bar-wrap { flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; }
-  .bar { width:100%; border-radius:4px 4px 0 0; background:linear-gradient(180deg,var(--gold),#c99a1a); min-height:2px; }
+  .bar-stack { width:100%; position:relative; display:flex; align-items:flex-end; }
+  .bar { width:100%; border-radius:4px 4px 0 0; background:linear-gradient(180deg,var(--gold),#c99a1a); min-height:2px; height:100%; }
   .bar.empty { background:var(--sh1); }
+  .bar-val { position:absolute; top:-15px; left:0; right:0; text-align:center;
+    color:var(--green); font-weight:700; line-height:1; white-space:nowrap; }
+  .bars.week-mode .bar-val { font-size:13px; top:-17px; }
+  .bars.month-mode .bar-val { font-size:8px; top:-13px; }
   .bar-label { font-size:8px; color:#8a8577; height:12px; line-height:12px; margin-top:4px; white-space:nowrap; overflow:visible; max-width:none; flex-shrink:0; }
-  .bar-val { font-size:8px; color:var(--green); font-weight:700; height:11px; line-height:11px; margin-bottom:2px; flex-shrink:0; }
+  .bars.week-mode .bar-label { font-size:11px; height:15px; line-height:15px; }
   .stats-empty { text-align:center; padding:40px 20px; color:#8a8577; font-size:13px; }
 
   /* settings toggle row */
@@ -902,6 +907,7 @@ function renderStats(){
     return;
   }
   barsEl.style.display='';
+  barsEl.className='bars '+(statsRange==='week'?'week-mode':'month-mode');
   barsEl.parentElement.querySelector('.stats-empty')?.remove();
 
   let highlightSet=new Set();
@@ -915,17 +921,16 @@ function renderStats(){
 
   days.forEach(function(d,idx){
     const col=document.createElement('div');col.className='bar-col';
-    const val=document.createElement('span');val.className='bar-val';
     const wrap=document.createElement('div');wrap.className='bar-wrap';
+    const barStack=document.createElement('div');barStack.className='bar-stack';
+    const val=document.createElement('span');val.className='bar-val';
     const bar=document.createElement('div');bar.className='bar'+(d.pct===null?' empty':'');
     const label=document.createElement('span');label.className='bar-label';
     if(d.pct===null){
       val.textContent='';
-      bar.style.height='2%';
     } else {
       if(statsRange==='week'){val.textContent=fp(d.pct);}
       else {val.textContent=highlightSet.has(idx)?fp(d.pct):'';}
-      bar.style.height=Math.max(d.pct,2)+'%';
     }
     if(statsRange==='week'){
       label.textContent=d.isToday?'امروز':DAYS[d.date.getDay()];
@@ -934,8 +939,10 @@ function renderStats(){
       const showLabel=d.isToday||(days.length-1-idx)%5===0;
       label.textContent=showLabel?fp(sh.d):'';
     }
-    wrap.appendChild(bar);
-    col.appendChild(val);col.appendChild(wrap);col.appendChild(label);
+    barStack.appendChild(val);barStack.appendChild(bar);
+    barStack.style.height=(d.pct===null?2:Math.max(d.pct,2))+'%';
+    wrap.appendChild(barStack);
+    col.appendChild(wrap);col.appendChild(label);
     barsEl.appendChild(col);
   });
 
@@ -1524,7 +1531,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.8.1';
+var CURRENT_VERSION = '1.8.2';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
