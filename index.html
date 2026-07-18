@@ -237,6 +237,7 @@
   .ctitle { font-size:18px; font-weight:500; color:var(--green); }
   .cmeta { font-size:17px; color:var(--lgray); margin-top:5px; width:100%;
     padding-right:42px; word-break:break-word; cursor:pointer; }
+  .cmeta .note-text { white-space:pre-wrap; }
 
   /* action buttons */
   .cactions { display:flex; gap:6px; flex-shrink:0; }
@@ -321,12 +322,13 @@
   /* form */
   .field { margin-bottom:12px; }
   .field label { display:block; font-size:17px; font-weight:600; color:var(--dgray); margin-bottom:5px; }
-  .field input, .field select { width:100%; padding:10px 13px; border-radius:var(--rs);
+  .field input, .field select, .field textarea { width:100%; padding:10px 13px; border-radius:var(--rs);
     border:none; font-size:18px; font-family:'Vazirmatn',sans-serif; color:var(--green);
     background:var(--bg); outline:none;
     box-shadow: inset 3px 3px 7px var(--sh1), inset -2px -2px 5px var(--sh2); }
-  .field input:focus, .field select:focus { box-shadow: inset 4px 4px 8px var(--sh1), inset -2px -2px 6px var(--sh2), 0 0 0 2px rgba(225,179,36,.3); }
+  .field input:focus, .field select:focus, .field textarea:focus { box-shadow: inset 4px 4px 8px var(--sh1), inset -2px -2px 6px var(--sh2), 0 0 0 2px rgba(225,179,36,.3); }
   .field select { appearance:none; -webkit-appearance:none; }
+  .field textarea { resize:vertical; min-height:44px; line-height:1.6; }
 
   /* subtask form editor */
   .sub-editor-list { margin-bottom:8px; }
@@ -593,7 +595,7 @@
     </div>
     <div class="field">
       <label>توضیح (اختیاری)</label>
-      <input type="text" id="fnote" placeholder=""/>
+      <textarea id="fnote" rows="3" placeholder=""></textarea>
     </div>
     <div class="field">
       <label>گروه (اختیاری)</label>
@@ -722,6 +724,7 @@ const ILABELS={'2days':'دو روز بعد',weekly:'هفتگی',biweekly:'دو �
 const PALETTE=['#E53935','#1E88E5','#2E7D32','#8E24AA','#757575','#F9A825','#6D4C41','#00ACC1'];
 const fp=n=>String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
 const todayStr=()=>new Date().toDateString();
+const escHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function localDateStr(date){
   const d = date || new Date();
@@ -817,6 +820,7 @@ function getTaskAgeClass(t){
   } else if(t.type==='recurring'){
     if(!t.nextDue||t.nextDue>tstr)return'';
     sinceStr=t.nextDue;
+    if(t.lastDoneDate&&t.lastDoneDate>=sinceStr){return'';}
   } else return'';
   const age=daysBetween(sinceStr,tstr);
   if(age>=6)return'age-6';
@@ -1050,7 +1054,7 @@ function makeCard(t,showRecurBadge){
   if(showRecurBadge){
     const cls=t.interval==='yearly'?'y':(t.interval==='monthly'?'m':'w');
     meta=`<span class="badge ${cls}" style="background:rgba(225,179,36,.15);color:#7A6000;">↻ ${ILABELS[t.interval]||''}</span>`;
-    if(t.note)meta+=` · ${t.note}`;
+    if(t.note)meta+=` · <span class="note-text">${escHtml(t.note)}</span>`;
   } else if(t.type==='recurring'){
     const cls=t.interval==='yearly'?'y':(t.interval==='monthly'?'m':'w');
     meta=`<span class="badge ${cls}">${ILABELS[t.interval]||''}</span>`;
@@ -1060,7 +1064,7 @@ function makeCard(t,showRecurBadge){
       else if(t.interval==='custom'){const sh=toShamsiFixed(new Date(t.nextDue));meta+=` <span style="color:var(--lgray)">· ${fp(sh.d)} ${SHAMSI_M[sh.m-1]}</span>`;}
       else{meta+=` <span class="overdue">· سررسید شده</span>`;}
     } else if(!t.done){meta+=` <span class="overdue">· سررسید شده</span>`;}
-  } else {if(t.note)meta=t.note;}
+  } else {if(t.note)meta=`<span class="note-text">${escHtml(t.note)}</span>`;}
 
   if(meta){
     const metaEl=document.createElement('div');metaEl.className='cmeta';
@@ -1206,7 +1210,7 @@ function toggleTask(id){
     if(!t.done){
       if(t.interval!=='custom'){const n=new Date();n.setDate(n.getDate()+(IDAYS[t.interval]||7));t.nextDue=localDateStr(n);}
       else{const n=new Date();n.setDate(n.getDate()+1);t.nextDue=localDateStr(n);}
-      t.done=true;t.doneDate=todayStr();
+      t.done=true;t.doneDate=todayStr();t.lastDoneDate=localDateStr();
     } else{t.done=false;t.doneDate=null;}
   }
   save();render();
@@ -1531,7 +1535,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.8.2';
+var CURRENT_VERSION = '1.9.0';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
