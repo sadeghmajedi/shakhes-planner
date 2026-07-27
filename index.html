@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Daily Tasks">
 <link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="icon" type="image/png" sizes="512x512" href="./apple-touch-icon.png">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <title>Sadegh's Daily Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1335,7 +1337,16 @@ function saveTask(){
   const subtasks=formSubtasks.filter(s=>s.title&&s.title.trim()).map(s=>({id:s.id,title:s.title.trim(),doneDate:s.doneDate||null}));
   if(editId){
     const t=tasks.find(x=>x.id===editId);
-    if(t){t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;if(ctype==='recurring')t.nextDue=nextDue;t.subtasks=subtasks;}
+    if(t){
+      /* یک تسک دوره‌ای که سررسیدش رسیده و هنوز تیک نخورده، نباید با ویرایش
+         از تب روزانه خارج شود؛ سررسید فعلی حفظ می‌شود و بازه‌ی جدید
+         از اولین تیک بعدی اعمال می‌گردد. استثنا: تاریخ دستی (custom) که
+         انتخاب صریح کاربر است و همیشه اعمال می‌شود. */
+      const wasDuePending = t.type==='recurring' && !t.done && (!t.nextDue || t.nextDue<=localDateStr());
+      t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;
+      if(ctype==='recurring' && (interval==='custom' || !wasDuePending)) t.nextDue=nextDue;
+      t.subtasks=subtasks;
+    }
   } else {
     tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,subtasks,createdAt:localDateStr()});
   }
@@ -1535,7 +1546,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.9.0';
+var CURRENT_VERSION = '1.9.1';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
