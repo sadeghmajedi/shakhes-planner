@@ -1,4 +1,4 @@
-const CACHE = 'shakhes-planner-v1.10.0';
+const CACHE = 'shakhes-planner-v1.10.1';
 const FILES = [
   './',
   './index.html',
