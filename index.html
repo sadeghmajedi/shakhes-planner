@@ -759,6 +759,20 @@ function localDateStr(date){
   const day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
 }
+/* 'YYYY-MM-DD' با new Date() به صورت UTC تفسیر می‌شود و در مقایسه با زمان
+   محلی خطای یک‌روزه می‌دهد؛ این دو کمکی همیشه محلی حساب می‌کنند. */
+function parseLocalDate(s){
+  if(!s)return null;
+  const p=String(s).split('-').map(Number);
+  if(p.length<3||p.some(isNaN))return null;
+  return new Date(p[0],p[1]-1,p[2]);
+}
+function daysUntil(s){
+  const target=parseLocalDate(s);if(!target)return 0;
+  const n=new Date();
+  const today=new Date(n.getFullYear(),n.getMonth(),n.getDate());
+  return Math.round((target-today)/86400000);
+}
 function toShamsiFixed(date){
   var gy=date.getFullYear(),gm=date.getMonth()+1,gd=date.getDate(),jy,jm,jd,g_d_no,j_d_no,j_np,i;
   gy-=1600;gm-=1;gd-=1;
@@ -1087,12 +1101,22 @@ function makeCard(t,showRecurBadge){
   } else if(t.type==='recurring'){
     const cls=t.interval==='yearly'?'y':(t.interval==='monthly'?'m':'w');
     meta=`<span class="badge ${cls}">${ILABELS[t.interval]||''}</span>`;
-    if(t.nextDue){
-      const d=Math.ceil((new Date(t.nextDue)-new Date())/86400000);
-      if(t.done){meta+=d<=3?` <span class="due-soon">· ${fp(Math.max(0,d))} روز دیگر</span>`:` <span style="color:var(--lgray)">· ${fp(d)} روز دیگر</span>`;}
-      else if(t.interval==='custom'){const sh=toShamsiFixed(new Date(t.nextDue));meta+=` <span style="color:var(--lgray)">· ${fp(sh.d)} ${SHAMSI_M[sh.m-1]}</span>`;}
-      else{meta+=` <span class="overdue">· سررسید شده</span>`;}
-    } else if(!t.done){meta+=` <span class="overdue">· سررسید شده</span>`;}
+    /* معیار نمایش «سررسید شده» باید خودِ سررسید باشد، نه فیلد done.
+       تسک انجام‌نشده با سررسید آینده (مثلاً بعد از برداشتن تیک یا کپی)
+       نباید سررسیدشده به نظر برسد. */
+    const isDue = !t.done && (!t.nextDue || t.nextDue<=localDateStr());
+    if(isDue){
+      meta+=` <span class="overdue">· سررسید شده</span>`;
+    } else if(t.nextDue){
+      if(t.interval==='custom'){
+        const sh=toShamsiFixed(parseLocalDate(t.nextDue));
+        meta+=` <span style="color:var(--lgray)">· ${fp(sh.d)} ${SHAMSI_M[sh.m-1]}</span>`;
+      } else {
+        const d=daysUntil(t.nextDue);
+        if(d<=3)meta+=` <span class="due-soon">· ${fp(Math.max(0,d))} روز دیگر</span>`;
+        else meta+=` <span style="color:var(--lgray)">· ${fp(d)} روز دیگر</span>`;
+      }
+    }
   } else {if(t.note)meta=`<span class="note-text">${escHtml(t.note)}</span>`;}
 
   if(meta){
@@ -1240,8 +1264,14 @@ function toggleTask(id){
   if(t.type==='daily'){t.done=!t.done;t.doneDate=t.done?todayStr():null;if(t.done){t.lastDoneDate=localDateStr();}}
   else{
     if(!t.done){
-      if(t.interval!=='custom'){const n=new Date();n.setDate(n.getDate()+(IDAYS[t.interval]||7));t.nextDue=localDateStr(n);}
+      const tstr=localDateStr();
+      if(t.pendingDue && t.pendingDue>tstr){
+        /* تاریخ دلخواهی که هنگام ویرایش به تعویق افتاده بود، حالا اعمال می‌شود. */
+        t.nextDue=t.pendingDue;
+      }
+      else if(t.interval!=='custom'){const n=new Date();n.setDate(n.getDate()+(IDAYS[t.interval]||7));t.nextDue=localDateStr(n);}
       else{const n=new Date();n.setDate(n.getDate()+1);t.nextDue=localDateStr(n);}
+      t.pendingDue=null;
       t.done=true;t.doneDate=todayStr();t.lastDoneDate=localDateStr();
     } else{t.done=false;t.doneDate=null;}
   }
@@ -1279,6 +1309,7 @@ function duplicateTask(id){
     done:false,
     doneDate:null,
     nextDue:t.type==='recurring'?(t.nextDue||null):null,
+    pendingDue:t.type==='recurring'?(t.pendingDue||null):null,
     lastDoneDate:null,
     subtasks:(t.subtasks||[]).map(s=>({id:newId(),title:s.title,doneDate:null})),
     createdAt:localDateStr()
@@ -1406,17 +1437,27 @@ function saveTask(){
   if(editId){
     const t=tasks.find(x=>x.id===editId);
     if(t){
-      /* یک تسک دوره‌ای که سررسیدش رسیده و هنوز تیک نخورده، نباید با ویرایش
-         از تب روزانه خارج شود؛ سررسید فعلی حفظ می‌شود و بازه‌ی جدید
-         از اولین تیک بعدی اعمال می‌گردد. استثنا: تاریخ دستی (custom) که
-         انتخاب صریح کاربر است و همیشه اعمال می‌شود. */
-      const wasDuePending = t.type==='recurring' && !t.done && (!t.nextDue || t.nextDue<=localDateStr());
+      /* تسکی که همین حالا در تب روزانه انجام‌نشده نشسته است، نباید با ویرایش
+         از آنجا خارج شود — چه دوره‌ای سررسیدشده باشد، چه روزانه‌ای که به
+         دوره‌ای تبدیل می‌شود. سررسید جدید از اولین تیک بعدی اعمال می‌گردد.
+         استثنا: تاریخ دلخواه در ویرایش یک تسک دوره‌ای، که تغییر زمان‌بندی
+         صریح است و فوراً اعمال می‌شود. */
+      const wasDaily = t.type==='daily';
+      const wasDuePending = !t.done && (wasDaily || !t.nextDue || t.nextDue<=localDateStr());
+      const applyNow = !wasDuePending || (interval==='custom' && !wasDaily);
       t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;
-      if(ctype==='recurring' && (interval==='custom' || !wasDuePending)) t.nextDue=nextDue;
+      if(ctype==='recurring'){
+        if(applyNow){t.nextDue=nextDue;t.pendingDue=null;}
+        else{
+          if(wasDaily)t.nextDue=null;
+          /* تاریخ دلخواه گم نشود: نگه داشته می‌شود تا سر تیک بعدی اعمال شود. */
+          t.pendingDue = interval==='custom' ? customDate : null;
+        }
+      } else {t.nextDue=null;t.pendingDue=null;}
       t.subtasks=subtasks;
     }
   } else {
-    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,subtasks,createdAt:localDateStr()});
+    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,pendingDue:null,subtasks,createdAt:localDateStr()});
   }
   save();closeModal();render();
 }
@@ -1638,7 +1679,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.10.0';
+var CURRENT_VERSION = '1.10.1';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
