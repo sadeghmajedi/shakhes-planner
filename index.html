@@ -213,6 +213,16 @@
   .card.age-4 { background:#FBE0B8; }
   .card.age-5 { background:#FAD0C8; }
   .card.age-6 { background:#F5B8B0; }
+  /* معاف: نه انجام‌شده، نه انجام‌نشده — از محاسبه‌ی درصد کنار گذاشته می‌شود */
+  .card.exempt { background:#E3E0DA; opacity:.72;
+    box-shadow: inset 2px 2px 6px var(--sh1), inset -2px -2px 5px var(--sh2); }
+  .card.exempt .ctitle { color:var(--lgray); font-style:italic; }
+  .card.exempt .chk { opacity:.35; pointer-events:none; }
+  .card.swiping { transition:none; }
+  .card.swipe-anim { transition:transform .18s ease-out; }
+  .badge-exempt { font-size:15px; color:var(--lgray); background:rgba(39,60,26,.07);
+    border-radius:8px; padding:1px 7px; margin-right:4px; }
+  .exempt-hint { font-size:15px; color:var(--lgray); }
 
   /* drag handle */
   .dhandle { display:flex; flex-direction:column; gap:3px; padding:4px 3px;
@@ -773,6 +783,23 @@ function daysUntil(s){
   const today=new Date(n.getFullYear(),n.getMonth(),n.getDate());
   return Math.round((target-today)/86400000);
 }
+/* «معاف» یعنی تسک امروز نه انجام شده و نه انجام‌نشده حساب می‌شود.
+   با ذخیره‌ی تاریخ (نه یک flag بولی) معافیت خودبه‌خود فردا منقضی می‌شود
+   و نیازی به پاک‌سازی در autoReset نیست. */
+function isExempt(t,dateStr){
+  return !!t.exemptDate && t.exemptDate===(dateStr||localDateStr());
+}
+function toggleExempt(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  const tstr=localDateStr();
+  if(isExempt(t,tstr)){t.exemptDate=null;}
+  else{
+    /* معاف کردن یک تسک تیک‌خورده معنا ندارد؛ اول تیکش برداشته می‌شود. */
+    if(t.type==='daily'&&t.done){t.done=false;t.doneDate=null;}
+    t.exemptDate=tstr;
+  }
+  save();render();
+}
 function toShamsiFixed(date){
   var gy=date.getFullYear(),gm=date.getMonth()+1,gd=date.getDate(),jy,jm,jd,g_d_no,j_d_no,j_np,i;
   gy-=1600;gm-=1;gd-=1;
@@ -843,7 +870,9 @@ function calcPctForDate(taskList,dateStr){
     (!t.done&&(!t.nextDue||t.nextDue<=dateStr)) ||
     (t.done&&t.doneDate===new Date(dateStr+'T12:00:00').toDateString())
   ));
-  const all=[...daily,...dueR];
+  /* تسک معاف از هر دو طرف کسر کنار گذاشته می‌شود تا درصد آن روز
+     دست‌نخورده بماند (نه بالا برود، نه پایین). */
+  const all=[...daily,...dueR].filter(t=>!isExempt(t,dateStr));
   return all.length===0?0:Math.round(all.filter(t=>t.done).length/all.length*100);
 }
 function daysBetween(dateStr1,dateStr2){
@@ -852,6 +881,7 @@ function daysBetween(dateStr1,dateStr2){
 }
 function getTaskAgeClass(t){
   if(t.done)return'';
+  if(isExempt(t))return'';
   const tstr=localDateStr();
   let sinceStr=null;
   if(t.type==='daily'){
@@ -1058,8 +1088,9 @@ function render(){
 }
 
 function makeCard(t,showRecurBadge){
+  const ex=isExempt(t);
   const card=document.createElement('div');
-  card.className='card'+(t.done?' done':'')+(getTaskAgeClass(t)?' '+getTaskAgeClass(t):'');
+  card.className='card'+(t.done?' done':'')+(ex?' exempt':'')+(getTaskAgeClass(t)?' '+getTaskAgeClass(t):'');
   card.dataset.id=t.id;
   const row=document.createElement('div');row.className='card-row';
 
@@ -1073,12 +1104,12 @@ function makeCard(t,showRecurBadge){
 
   const chk=document.createElement('div');chk.className='chk';
   chk.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-  chk.addEventListener('click',function(e){e.stopPropagation();toggleTask(t.id);});
+  chk.addEventListener('click',function(e){e.stopPropagation();if(isExempt(t))return;toggleTask(t.id);});
   row.appendChild(chk);
 
   const titleEl=document.createElement('div');titleEl.className='cbody';
   titleEl.innerHTML=`<div class="ctitle">${t.title}</div>`;
-  titleEl.addEventListener('click',function(){toggleTask(t.id);});
+  titleEl.addEventListener('click',function(){if(isExempt(t))return;toggleTask(t.id);});
   row.appendChild(titleEl);
 
   const acts=document.createElement('div');acts.className='cactions';
@@ -1119,15 +1150,61 @@ function makeCard(t,showRecurBadge){
     }
   } else {if(t.note)meta=`<span class="note-text">${escHtml(t.note)}</span>`;}
 
+  if(ex){
+    meta=`<span class="badge-exempt">معاف امروز</span><span class="exempt-hint">· برای بازگرداندن، بکشید</span>`
+      + (meta?` <br>${meta}`:'');
+  }
+
   if(meta){
     const metaEl=document.createElement('div');metaEl.className='cmeta';
-    metaEl.innerHTML=meta;metaEl.addEventListener('click',function(){toggleTask(t.id);});
+    metaEl.innerHTML=meta;metaEl.addEventListener('click',function(){if(isExempt(t))return;toggleTask(t.id);});
     card.appendChild(metaEl);
   }
   if(t.subtasks&&t.subtasks.length){
     card.appendChild(renderSubDisplay(t));
   }
+  attachSwipe(card,t.id);
   return card;
+}
+
+/* ── Swipe برای معاف کردن ──
+   drag جابجایی فقط از دستگیره‌ی .dhandle شروع می‌شود، پس swipe روی
+   بدنه‌ی کارت با آن تداخل ندارد. حرکت افقی باید غالب باشد تا اسکرول
+   عمودی صفحه از کار نیفتد. */
+const SWIPE_TRIGGER=70;
+function attachSwipe(card,id){
+  let sx=0,sy=0,dx=0,active=false,decided=false,horiz=false;
+  card.addEventListener('touchstart',function(e){
+    if(drag)return;
+    if(e.target.closest('.dhandle,.ibtn'))return;
+    const tch=e.touches[0];sx=tch.clientX;sy=tch.clientY;dx=0;
+    active=true;decided=false;horiz=false;
+    card.classList.remove('swipe-anim');
+  },{passive:true});
+  card.addEventListener('touchmove',function(e){
+    if(!active||drag)return;
+    const tch=e.touches[0];
+    const mx=tch.clientX-sx,my=tch.clientY-sy;
+    if(!decided){
+      if(Math.abs(mx)<8&&Math.abs(my)<8)return;
+      decided=true;horiz=Math.abs(mx)>Math.abs(my);
+      if(horiz)card.classList.add('swiping');
+    }
+    if(!horiz){active=false;return;}
+    e.preventDefault();
+    dx=mx;
+    const damp=Math.sign(dx)*Math.min(Math.abs(dx),110);
+    card.style.transform=`translateX(${damp}px)`;
+    card.style.opacity=String(Math.max(.45,1-Math.abs(damp)/260));
+  },{passive:false});
+  const finish=function(){
+    if(!active)return;active=false;
+    card.classList.remove('swiping');card.classList.add('swipe-anim');
+    card.style.transform='';card.style.opacity='';
+    if(horiz&&Math.abs(dx)>=SWIPE_TRIGGER)toggleExempt(id);
+  };
+  card.addEventListener('touchend',finish);
+  card.addEventListener('touchcancel',finish);
 }
 
 function renderSubDisplay(t){
@@ -1207,7 +1284,10 @@ function renderDaily(){
   /* ترتیب نمایش از آرایه‌ی سراسری tasks گرفته می‌شود (نه الحاق دو لیست)،
      تا تسک دوره‌ای بتواند هر جای لیست گروه بنشیند و جابجایی با drag ماندگار شود. */
   const pendingIds=new Set(dailyTasks.filter(t=>!t.done).map(t=>t.id));
-  const allPending=tasks.filter(t=>pendingIds.has(t.id)||dueIds.has(t.id));
+  const allActive=tasks.filter(t=>pendingIds.has(t.id)||dueIds.has(t.id));
+  /* معاف‌ها از لیست جاری بیرون کشیده و در بخش خودشان پایین صفحه نمایش داده می‌شوند. */
+  const exempted=allActive.filter(t=>isExempt(t,tstr));
+  const allPending=allActive.filter(t=>!isExempt(t,tstr));
   const done=dailyTasks.filter(t=>t.done);
   if(!dailyTasks.length&&!dueRecurring.length){
     if(searchQuery.trim()){
@@ -1223,6 +1303,11 @@ function renderDaily(){
     btn.addEventListener('click',openGrpOrder);c.appendChild(btn);
   }
   if(allPending.length)renderGrouped(allPending,c,dueIds);
+  if(exempted.length){
+    const sep=document.createElement('div');sep.className='sec-hdr';
+    sep.innerHTML=`<span class="sec-title">معاف امروز</span><span class="sec-count">${fp(exempted.length)} کار</span>`;
+    c.appendChild(sep);exempted.forEach(t=>c.appendChild(makeCard(t,dueIds.has(t.id))));
+  }
   if(done.length){
     const sep=document.createElement('div');sep.className='sec-hdr';
     sep.innerHTML=`<span class="sec-title">انجام شده</span><span class="sec-count">${fp(done.length)} کار</span>`;
@@ -1310,6 +1395,7 @@ function duplicateTask(id){
     doneDate:null,
     nextDue:t.type==='recurring'?(t.nextDue||null):null,
     pendingDue:t.type==='recurring'?(t.pendingDue||null):null,
+    exemptDate:null,
     lastDoneDate:null,
     subtasks:(t.subtasks||[]).map(s=>({id:newId(),title:s.title,doneDate:null})),
     createdAt:localDateStr()
@@ -1457,7 +1543,7 @@ function saveTask(){
       t.subtasks=subtasks;
     }
   } else {
-    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,pendingDue:null,subtasks,createdAt:localDateStr()});
+    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,pendingDue:null,exemptDate:null,subtasks,createdAt:localDateStr()});
   }
   save();closeModal();render();
 }
@@ -1536,7 +1622,8 @@ function sectionOf(t){
   const tstr=localDateStr();
   const isDue=!t.done&&(!t.nextDue||t.nextDue<=tstr);
   if(tab==='daily'){
-    /* تسک دوره‌ای فقط وقتی سررسید شده باشد در تب روزانه کارت دارد. */
+    /* معاف بخش جداگانه دارد تا با کارهای در انتظار قاطی نشود. */
+    if(isExempt(t,tstr))return 'exempt';
     if(t.type==='recurring')return isDue?'pending':null;
     return t.done?'done':'pending';
   }
@@ -1679,7 +1766,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.10.1';
+var CURRENT_VERSION = '1.11.0';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
