@@ -225,8 +225,12 @@
     box-shadow: inset 2px 2px 6px var(--sh1), inset -2px -2px 5px var(--sh2); }
   .card.exempt .ctitle { color:var(--lgray); font-style:italic; }
   .card.exempt .chk { opacity:.35; pointer-events:none; }
-  .card.swiping { transition:none; }
-  .card.swipe-anim { transition:transform .18s ease-out; }
+  .card-inner { width:100%; }
+  /* بریدن در سطح خودِ کارت: ترنسفورم لایه‌ی داخلی هرگز از کارت بیرون
+     نمی‌زند، پس کانتینر اسکرول ناحیه‌ی افقی پیدا نمی‌کند و هدر sticky
+     تکان نمی‌خورد. تنها در حین swipe فعال است تا ظاهر عادی تغییر نکند. */
+  .card.swiping { overflow:hidden; }
+  .card-inner.swipe-anim { transition:transform .18s ease-out, opacity .18s ease-out; }
   .badge-exempt { font-size:15px; color:var(--lgray); background:rgba(39,60,26,.07);
     border-radius:8px; padding:1px 7px; margin-right:4px; }
   .exempt-hint { font-size:15px; color:var(--lgray); }
@@ -796,6 +800,13 @@ function daysUntil(s){
 function isExempt(t,dateStr){
   return !!t.exemptDate && t.exemptDate===(dateStr||localDateStr());
 }
+/* تنها مرجع «سررسید شده بودن» یک تسک دوره‌ای. قبلاً این شرط در پنج جای
+   مستقل تکرار شده بود و ناهمخوانی‌شان منشأ باگ برچسب سررسید بود. */
+function isDueRecurring(t,dateStr){
+  if(!t||t.type!=='recurring')return false;
+  if(t.done)return false;
+  return !t.nextDue || t.nextDue<=(dateStr||localDateStr());
+}
 function toggleExempt(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   const tstr=localDateStr();
@@ -869,13 +880,11 @@ function showGrpDropdown(filter){
   dd.classList.add('open');
 }
 function hideGrpDropdown(){const dd=document.getElementById('grpDropdown');if(dd)dd.classList.remove('open');}
-function updateSuggestions(){}
-
 function calcPctForDate(taskList,dateStr){
   const daily=taskList.filter(t=>t.type==='daily');
   const dueR=taskList.filter(t=>t.type==='recurring'&&(
-    (!t.done&&(!t.nextDue||t.nextDue<=dateStr)) ||
-    (t.done&&t.doneDate===new Date(dateStr+'T12:00:00').toDateString())
+    isDueRecurring(t,dateStr) ||
+    (t.done&&t.doneDate===parseLocalDate(dateStr).toDateString())
   ));
   /* تسک معاف از هر دو طرف کسر کنار گذاشته می‌شود تا درصد آن روز
      دست‌نخورده بماند (نه بالا برود، نه پایین). */
@@ -883,7 +892,7 @@ function calcPctForDate(taskList,dateStr){
   return all.length===0?0:Math.round(all.filter(t=>t.done).length/all.length*100);
 }
 function daysBetween(dateStr1,dateStr2){
-  const d1=new Date(dateStr1+'T12:00:00');const d2=new Date(dateStr2+'T12:00:00');
+  const d1=parseLocalDate(dateStr1);const d2=parseLocalDate(dateStr2);
   return Math.round((d2-d1)/86400000);
 }
 function getTaskAgeClass(t){
@@ -1097,8 +1106,12 @@ function render(){
 function makeCard(t,showRecurBadge){
   const ex=isExempt(t);
   const card=document.createElement('div');
-  card.className='card'+(t.done?' done':'')+(ex?' exempt':'')+(getTaskAgeClass(t)?' '+getTaskAgeClass(t):'');
+  const ageCls=getTaskAgeClass(t);
+  card.className='card'+(t.done?' done':'')+(ex?' exempt':'')+(ageCls?' '+ageCls:'');
   card.dataset.id=t.id;
+  /* محتوای کارت داخل یک لایه‌ی جداگانه قرار می‌گیرد تا ترنسفورمِ swipe
+     درون خودِ کارت بریده شود و هیچ سرریز افقی برای کانتینر اسکرول نسازد. */
+  const inner=document.createElement('div');inner.className='card-inner';
   const row=document.createElement('div');row.className='card-row';
 
   const dh=document.createElement('div');dh.className='dhandle';
@@ -1129,7 +1142,7 @@ function makeCard(t,showRecurBadge){
   const delBtn=document.createElement('button');delBtn.className='ibtn';
   delBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--lgray)" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
   delBtn.addEventListener('click',function(e){e.stopPropagation();deleteTask(t.id);});acts.appendChild(delBtn);
-  row.appendChild(acts);card.appendChild(row);
+  row.appendChild(acts);inner.appendChild(row);
 
   let meta='';
   if(showRecurBadge){
@@ -1142,7 +1155,7 @@ function makeCard(t,showRecurBadge){
     /* معیار نمایش «سررسید شده» باید خودِ سررسید باشد، نه فیلد done.
        تسک انجام‌نشده با سررسید آینده (مثلاً بعد از برداشتن تیک یا کپی)
        نباید سررسیدشده به نظر برسد. */
-    const isDue = !t.done && (!t.nextDue || t.nextDue<=localDateStr());
+    const isDue = isDueRecurring(t);
     if(isDue){
       meta+=` <span class="overdue">· سررسید شده</span>`;
     } else if(t.nextDue){
@@ -1165,12 +1178,13 @@ function makeCard(t,showRecurBadge){
   if(meta){
     const metaEl=document.createElement('div');metaEl.className='cmeta';
     metaEl.innerHTML=meta;metaEl.addEventListener('click',function(){if(isExempt(t))return;toggleTask(t.id);});
-    card.appendChild(metaEl);
+    inner.appendChild(metaEl);
   }
   if(t.subtasks&&t.subtasks.length){
-    card.appendChild(renderSubDisplay(t));
+    inner.appendChild(renderSubDisplay(t));
   }
-  attachSwipe(card,t.id);
+  card.appendChild(inner);
+  attachSwipe(card,inner,t.id);
   return card;
 }
 
@@ -1179,14 +1193,14 @@ function makeCard(t,showRecurBadge){
    بدنه‌ی کارت با آن تداخل ندارد. حرکت افقی باید غالب باشد تا اسکرول
    عمودی صفحه از کار نیفتد. */
 const SWIPE_TRIGGER=70;
-function attachSwipe(card,id){
+function attachSwipe(card,inner,id){
   let sx=0,sy=0,dx=0,active=false,decided=false,horiz=false;
   card.addEventListener('touchstart',function(e){
     if(drag)return;
     if(e.target.closest('.dhandle,.ibtn'))return;
     const tch=e.touches[0];sx=tch.clientX;sy=tch.clientY;dx=0;
     active=true;decided=false;horiz=false;
-    card.classList.remove('swipe-anim');
+    inner.classList.remove('swipe-anim');
   },{passive:true});
   card.addEventListener('touchmove',function(e){
     if(!active||drag)return;
@@ -1199,23 +1213,20 @@ function attachSwipe(card,id){
     }
     if(!horiz){active=false;return;}
     e.preventDefault();
-    /* پشتیبان برای مرورگرهایی که overflow-x:clip ندارند: اگر کانتینر
-       به دلیل ترنسفورم کارت افقی اسکرول شد، فوراً به صفر برگردانده می‌شود
-       تا هدرِ sticky تکان نخورد. */
-    const sw=document.querySelector('.scroll-wrap');
-    if(sw&&sw.scrollLeft!==0)sw.scrollLeft=0;
     dx=mx;
     const damp=Math.sign(dx)*Math.min(Math.abs(dx),110);
-    card.style.transform=`translateX(${damp}px)`;
-    card.style.opacity=String(Math.max(.45,1-Math.abs(damp)/260));
+    inner.style.transform=`translateX(${damp}px)`;
+    inner.style.opacity=String(Math.max(.45,1-Math.abs(damp)/260));
   },{passive:false});
   const finish=function(){
     if(!active)return;active=false;
-    card.classList.remove('swiping');card.classList.add('swipe-anim');
-    card.style.transform='';card.style.opacity='';
-    const sw=document.querySelector('.scroll-wrap');
-    if(sw&&sw.scrollLeft!==0)sw.scrollLeft=0;
-    if(horiz&&Math.abs(dx)>=SWIPE_TRIGGER)toggleExempt(id);
+    inner.classList.add('swipe-anim');
+    inner.style.transform='';inner.style.opacity='';
+    const fired=horiz&&Math.abs(dx)>=SWIPE_TRIGGER;
+    /* کلاس swiping (که کارت را می‌بُرد) تا پایان انیمیشن بازگشت نگه داشته
+       می‌شود، وگرنه در همان ۰٫۱۸ ثانیه دوباره سرریز ایجاد می‌شود. */
+    setTimeout(function(){card.classList.remove('swiping');},200);
+    if(fired)toggleExempt(id);
   };
   card.addEventListener('touchend',finish);
   card.addEventListener('touchcancel',finish);
@@ -1293,7 +1304,7 @@ function renderDaily(){
   const c=document.getElementById('content');c.innerHTML='';
   const tstr=localDateStr();
   const dailyTasks=tasks.filter(t=>t.type==='daily'&&taskMatchesSearch(t,searchQuery));
-  const dueRecurring=tasks.filter(t=>t.type==='recurring'&&!t.done&&(!t.nextDue||t.nextDue<=tstr)&&taskMatchesSearch(t,searchQuery));
+  const dueRecurring=tasks.filter(t=>isDueRecurring(t,tstr)&&taskMatchesSearch(t,searchQuery));
   const dueIds=new Set(dueRecurring.map(t=>t.id));
   /* ترتیب نمایش از آرایه‌ی سراسری tasks گرفته می‌شود (نه الحاق دو لیست)،
      تا تسک دوره‌ای بتواند هر جای لیست گروه بنشیند و جابجایی با drag ماندگار شود. */
@@ -1344,7 +1355,7 @@ function renderRecurring(){
     }
     return;
   }
-  const due=all.filter(t=>!t.done&&(!t.nextDue||t.nextDue<=tstr)).sort((a,b)=>(a.nextDue||'').localeCompare(b.nextDue||''));
+  const due=all.filter(t=>isDueRecurring(t,tstr)).sort((a,b)=>(a.nextDue||'').localeCompare(b.nextDue||''));
   const upcoming=all.filter(t=>(!t.done&&t.nextDue&&t.nextDue>tstr)||(t.done&&t.nextDue&&t.nextDue>tstr)).sort((a,b)=>(a.nextDue||'').localeCompare(b.nextDue||''));
   if(due.length){
     const s=document.createElement('div');
@@ -1634,14 +1645,13 @@ let drag=null;
 function sectionOf(t){
   if(!t)return null;
   const tstr=localDateStr();
-  const isDue=!t.done&&(!t.nextDue||t.nextDue<=tstr);
   if(tab==='daily'){
     /* معاف بخش جداگانه دارد تا با کارهای در انتظار قاطی نشود. */
     if(isExempt(t,tstr))return 'exempt';
-    if(t.type==='recurring')return isDue?'pending':null;
+    if(t.type==='recurring')return isDueRecurring(t,tstr)?'pending':null;
     return t.done?'done':'pending';
   }
-  return isDue?'due':'upcoming';
+  return isDueRecurring(t,tstr)?'due':'upcoming';
 }
 function sameGroup(a,b){
   return normalize(a.group||'')===normalize(b.group||'');
@@ -1663,12 +1673,11 @@ function initDrag(){
 function dragStart(e){
   e.preventDefault();const card=e.currentTarget.closest('.card');if(!card)return;
   const id=card.dataset.id;const task=tasks.find(t=>t.id===id);if(!task)return;
-  const section=sectionOf(task);
   const ghost=card.cloneNode(true);const rect=card.getBoundingClientRect();
   const cx=e.touches?e.touches[0].clientX:e.clientX;const cy=e.touches?e.touches[0].clientY:e.clientY;
   ghost.style.cssText=`position:fixed;z-index:9999;pointer-events:none;width:${card.offsetWidth}px;opacity:.85;transform:scale(1.02);box-shadow:8px 8px 20px #b8b4ac,-4px -4px 12px #fff;left:${cx-(cx-rect.left)}px;top:${cy-(cy-rect.top)}px;`;
   document.body.appendChild(ghost);card.classList.add('dragging');
-  drag={id,section,ghost,ox:cx-rect.left,oy:cy-rect.top,lastOver:null};
+  drag={id,ghost,ox:cx-rect.left,oy:cy-rect.top,lastOver:null};
   if(e.touches){document.addEventListener('touchmove',dragMove,{passive:false});document.addEventListener('touchend',dragEnd);}
   else{document.addEventListener('mousemove',dragMove);document.addEventListener('mouseup',dragEnd);}
 }
@@ -1780,7 +1789,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.11.1';
+var CURRENT_VERSION = '1.11.2';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -2017,6 +2026,3 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').cat
 </script>
 </body>
 </html>
-
-
-
