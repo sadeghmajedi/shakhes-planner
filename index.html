@@ -32,6 +32,13 @@
     bottom:calc(90px + var(--sb));
     overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
     overscroll-behavior:contain; }
+  /* هنگام swipe، ترنسفورم کارت به سمت انتهای محور افقی (در RTL: چپ)
+     ناحیه‌ی اسکرول افقی می‌سازد؛ overflow-x:hidden آن را می‌بُرد ولی
+     کانتینر همچنان قابل اسکرول می‌ماند و هدرِ sticky با آن جابجا می‌شود.
+     clip اصلاً ناحیه‌ی اسکرول نمی‌سازد و مشکل را ریشه‌ای حل می‌کند. */
+  @supports (overflow-x: clip) {
+    .scroll-wrap { overflow-x: clip; }
+  }
 
   /* ── Content ── */
   .content { padding:14px calc(20px + var(--sr)) 30px calc(20px + var(--sl)); }
@@ -955,16 +962,16 @@ function renderStats(){
   const n=statsRange==='week'?7:30;
   const days=[];
   const base=new Date();
-  for(let i=n-1;i>=0;i--){
+  /* امروز هنوز تمام نشده و درصدش تا پایان روز تغییر می‌کند، پس از نمودار و
+     معدل کنار گذاشته می‌شود. پنجره یک روز عقب می‌رود تا همچنان n روز
+     کامل نمایش داده شود و آخرین ستون «دیروز» باشد. */
+  for(let i=n;i>=1;i--){
     const d=new Date(base);d.setDate(d.getDate()-i);
     const ds=localDateStr(d);
-    const isToday=i===0;
-    let pct;
-    if(isToday){pct=calcPctForDate(tasks,ds);}
-    else{pct=hist.hasOwnProperty(ds)?hist[ds]:null;}
-    days.push({dateStr:ds,date:d,pct,isToday});
+    const pct=hist.hasOwnProperty(ds)?hist[ds]:null;
+    days.push({dateStr:ds,date:d,pct,isLast:i===1});
   }
-  document.getElementById('statsChartTitle').textContent=statsRange==='week'?'۷ روز اخیر':'۳۰ روز اخیر';
+  document.getElementById('statsChartTitle').textContent=statsRange==='week'?'۷ روز اخیر (تا دیروز)':'۳۰ روز اخیر (تا دیروز)';
 
   const recorded=days.filter(d=>d.pct!==null);
   const avg=recorded.length?Math.round((recorded.reduce((s,d)=>s+d.pct,0)/recorded.length)*10)/10:0;
@@ -1007,10 +1014,10 @@ function renderStats(){
       else {val.textContent=highlightSet.has(idx)?fp(d.pct):'';}
     }
     if(statsRange==='week'){
-      label.textContent=d.isToday?'امروز':DAYS[d.date.getDay()];
+      label.textContent=d.isLast?'دیروز':DAYS[d.date.getDay()];
     } else {
       const sh=toShamsiFixed(d.date);
-      const showLabel=d.isToday||(days.length-1-idx)%5===0;
+      const showLabel=d.isLast||(days.length-1-idx)%5===0;
       label.textContent=showLabel?fp(sh.d):'';
     }
     barStack.appendChild(val);barStack.appendChild(bar);
@@ -1039,7 +1046,7 @@ function renderTrendChart(days){
     return;
   }
   const pts=days.map(function(d,i){
-    return {x:i,pct:d.pct,date:d.date,isToday:d.isToday};
+    return {x:i,pct:d.pct,date:d.date,isLast:d.isLast};
   }).filter(function(p){return p.pct!==null;});
 
   const n=days.length;
@@ -1062,12 +1069,12 @@ function renderTrendChart(days){
   let dots='';
   pts.forEach(function(p){
     const x=xFor(p.x),y=yFor(p.pct);
-    dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(p.isToday?3.5:2)+'" fill="'+(p.isToday?'var(--green)':'var(--gold)')+'"/>';
+    dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(p.isLast?3.5:2)+'" fill="'+(p.isLast?'var(--green)':'var(--gold)')+'"/>';
   });
 
   let xLabels='';
   days.forEach(function(d,idx){
-    if(d.isToday||(days.length-1-idx)%5===0){
+    if(d.isLast||(days.length-1-idx)%5===0){
       const sh=toShamsiFixed(d.date);
       xLabels+='<text x="'+xFor(idx).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="8" fill="#8a8577">'+fp(sh.d)+'</text>';
     }
@@ -1192,6 +1199,11 @@ function attachSwipe(card,id){
     }
     if(!horiz){active=false;return;}
     e.preventDefault();
+    /* پشتیبان برای مرورگرهایی که overflow-x:clip ندارند: اگر کانتینر
+       به دلیل ترنسفورم کارت افقی اسکرول شد، فوراً به صفر برگردانده می‌شود
+       تا هدرِ sticky تکان نخورد. */
+    const sw=document.querySelector('.scroll-wrap');
+    if(sw&&sw.scrollLeft!==0)sw.scrollLeft=0;
     dx=mx;
     const damp=Math.sign(dx)*Math.min(Math.abs(dx),110);
     card.style.transform=`translateX(${damp}px)`;
@@ -1201,6 +1213,8 @@ function attachSwipe(card,id){
     if(!active)return;active=false;
     card.classList.remove('swiping');card.classList.add('swipe-anim');
     card.style.transform='';card.style.opacity='';
+    const sw=document.querySelector('.scroll-wrap');
+    if(sw&&sw.scrollLeft!==0)sw.scrollLeft=0;
     if(horiz&&Math.abs(dx)>=SWIPE_TRIGGER)toggleExempt(id);
   };
   card.addEventListener('touchend',finish);
@@ -1766,7 +1780,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.11.0';
+var CURRENT_VERSION = '1.11.1';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
