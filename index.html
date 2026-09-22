@@ -1789,7 +1789,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.11.2';
+var CURRENT_VERSION = '1.11.3';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -2022,7 +2022,15 @@ function fixTabsTop(){
 }
 fixTabsTop();
 window.addEventListener('resize', fixTabsTop);
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){});}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(function(){});
+  var swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if (swRefreshing) return;
+    swRefreshing = true;
+    window.location.reload();
+  });
+}
 </script>
 </body>
 </html>
