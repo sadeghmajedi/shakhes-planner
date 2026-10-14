@@ -1290,13 +1290,29 @@ function renderGrouped(taskList,container,showRecurBadgeFor){
   });
 }
 
+// یکسان‌سازی متن برای جستجو: کیبورد عربی و فارسی آیفون «ی»، «ک» و ارقام را
+// با کدهای Unicode متفاوت تولید می‌کنند. فقط در لحظه‌ی مقایسه استفاده می‌شود
+// و داده‌ی ذخیره‌شده را تغییر نمی‌دهد. (normalize بالا برای هویت/رنگ گروه‌هاست و دست نخورده)
+function normalizeFa(s){
+  if(s==null)return'';
+  return String(s)
+    .replace(/[\u064A\u0649]/g,'\u06CC')                             // ي ى → ی
+    .replace(/\u0643/g,'\u06A9')                                     // ك → ک
+    .replace(/[\u0660-\u0669]/g,d=>String(d.charCodeAt(0)-0x0660)) // ارقام عربی → لاتین
+    .replace(/[\u06F0-\u06F9]/g,d=>String(d.charCodeAt(0)-0x06F0)) // ارقام فارسی → لاتین
+    .replace(/[\u064B-\u065F\u0670\u0640]/g,'')                      // اعراب و کشیده
+    .replace(/[\u200C\u200D\u200E\u200F]/g,'')                       // نیم‌فاصله و نویسه‌های جهت
+    .replace(/\s+/g,' ')
+    .trim()
+    .toLowerCase();
+}
 function taskMatchesSearch(t,q){
   if(!q)return true;
-  q=q.trim().toLowerCase();
+  q=normalizeFa(q);
   if(!q)return true;
-  if(t.title&&t.title.toLowerCase().includes(q))return true;
-  if(t.group&&t.group.toLowerCase().includes(q))return true;
-  if(t.subtasks&&t.subtasks.some(s=>s.title&&s.title.toLowerCase().includes(q)))return true;
+  if(t.title&&normalizeFa(t.title).includes(q))return true;
+  if(t.group&&normalizeFa(t.group).includes(q))return true;
+  if(t.subtasks&&t.subtasks.some(s=>s.title&&normalizeFa(s.title).includes(q)))return true;
   return false;
 }
 
@@ -1789,7 +1805,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.11.3';
+var CURRENT_VERSION = '1.11.4';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
