@@ -3,8 +3,8 @@
   "short_name": "Daily Tasks",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#273C1A",
-  "theme_color": "#273C1A",
+  "background_color": "#FEFAE0",
+  "theme_color": "#CCD5AE",
   "icons": [
     {
       "src": "./apple-touch-icon.png",
