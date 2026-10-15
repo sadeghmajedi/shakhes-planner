@@ -449,7 +449,8 @@
   .grp-dropdown { position:absolute; bottom:calc(100% + 4px); right:0; left:0;
     background:var(--bg); border-radius:var(--rs); z-index:500;
     box-shadow: -4px -4px 16px rgba(0,0,0,.12), 4px 4px 12px var(--sh1);
-    overflow:hidden; display:none; max-height:180px; overflow-y:auto; }
+    overflow:hidden; display:none; max-height:180px; overflow-y:auto;
+    -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
   .grp-dropdown.open { display:block; }
   .grp-dropdown-item { display:flex; align-items:center; gap:10px; padding:11px 14px;
     cursor:pointer; font-size:18px; color:var(--green); font-family:'Vazirmatn',sans-serif; }
@@ -957,7 +958,21 @@ function showGrpDropdown(filter){
     const dot=document.createElement('div');dot.className='item-dot';dot.style.background=groupColor(g);
     item.appendChild(dot);item.appendChild(document.createTextNode(g));
     item.addEventListener('mousedown',function(e){e.preventDefault();document.getElementById('fgroup').value=g;dd.classList.remove('open');});
-    item.addEventListener('touchend',function(e){e.preventDefault();document.getElementById('fgroup').value=g;dd.classList.remove('open');});
+    /* لمس برای انتخاب در برابر لمس برای اسکرول: فقط وقتی انتخاب کن که انگشت
+       بین شروع و پایان لمس عملاً جابجا نشده باشد. اگر جابجا شده (اسکرول)،
+       preventDefault نمی‌شود تا اسکرول طبیعی و اینرسی آن کار کند. */
+    let tsx=0,tsy=0,tMoved=false;
+    item.addEventListener('touchstart',function(e){
+      const p=e.touches[0];tsx=p.clientX;tsy=p.clientY;tMoved=false;
+    },{passive:true});
+    item.addEventListener('touchmove',function(e){
+      const p=e.touches[0];
+      if(Math.abs(p.clientX-tsx)>8||Math.abs(p.clientY-tsy)>8)tMoved=true;
+    },{passive:true});
+    item.addEventListener('touchend',function(e){
+      if(tMoved)return;
+      e.preventDefault();document.getElementById('fgroup').value=g;dd.classList.remove('open');
+    });
     dd.appendChild(item);
   });
   dd.classList.add('open');
@@ -1500,8 +1515,27 @@ function renderRecurring(){
   }
 }
 
+/* لرزش کوتاه هنگام انجام کار. باید مستقیم داخل رویداد لمس صدا زده شود.
+   اندروید/کروم: navigator.vibrate؛ آیفون (iOS 18+): کلیک روی سوییچ پنهان.
+   در نسخه‌های قدیمی‌تر iOS بی‌صدا هیچ کاری نمی‌کند. */
+function haptic(){
+  try{
+    if(navigator.vibrate&&navigator.vibrate(12))return;
+    /* از iOS 18، تغییر وضعیت <input type="checkbox" switch> لرزش سیستمی می‌دهد؛
+       یک سوییچ موقت و پنهان ساخته، کلیک و بلافاصله حذف می‌شود. */
+    const l=document.createElement('label');
+    l.setAttribute('aria-hidden','true');l.style.display='none';
+    const i=document.createElement('input');
+    i.type='checkbox';i.setAttribute('switch','');
+    l.appendChild(i);document.head.appendChild(l);
+    l.click();
+    document.head.removeChild(l);
+  }catch(e){}
+}
 function toggleTask(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
+  /* لرزش فقط برای «انجام شد»، نه برداشتن تیک؛ «تاریخ مشخص» بعد از تأیید پنجره می‌لرزد */
+  if(!t.done && !(t.type==='recurring' && !t.oneTime && t.interval==='custom'))haptic();
   if(t.type==='daily'){t.done=!t.done;t.doneDate=t.done?todayStr():null;if(t.done){t.lastDoneDate=localDateStr();}}
   else{
     if(!t.done && t.oneTime){
@@ -1557,6 +1591,7 @@ function confirmNextDate(){
   }
   t.nextDue=v;t.pendingDue=null;
   t.done=true;t.doneDate=todayStr();t.lastDoneDate=localDateStr();
+  haptic();
   closeNextDate();
   save();render();
 }
@@ -1764,10 +1799,27 @@ function saveTask(){
       const wasDaily = t.type==='daily';
       const wasDuePending = !t.done && (wasDaily || !t.nextDue || t.nextDue<=localDateStr());
       const applyNow = !wasDuePending || postpone;
+      const prevType=t.type, prevInterval=t.interval;
       t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;
       t.stars=formStars;t.oneTime=oneTime;
       if(ctype==='recurring'){
-        if(applyNow){t.nextDue=nextDue;t.pendingDue=null;}
+        if(applyNow){
+          /* ویرایش عنوان، توضیح، ستاره و... نباید سررسید را جابجا کند. سررسید فقط
+             وقتی دوباره حساب می‌شود که زمان‌بندی واقعاً عوض شده باشد: تبدیل از روزانه،
+             تغییر بازه‌ی تکرار، یا «تاریخ مشخص» (که تاریخش را خود کاربر در فرم می‌دهد). */
+          const scheduleChanged = prevType!=='recurring' || prevInterval!==interval || interval==='custom' || !t.nextDue;
+          if(scheduleChanged){
+            if(interval!=='custom' && prevType==='recurring' && t.lastDoneDate){
+              /* بازه عوض شده: از آخرین انجام حساب می‌شود، نه از امروز */
+              const b=parseLocalDate(t.lastDoneDate);
+              b.setDate(b.getDate()+(IDAYS[interval]||7));
+              t.nextDue=localDateStr(b);
+            } else {
+              t.nextDue=nextDue;
+            }
+          }
+          t.pendingDue=null;
+        }
         else{
           if(wasDaily)t.nextDue=null;
           /* تاریخ دلخواه گم نشود: نگه داشته می‌شود تا سر تیک بعدی اعمال شود. */
@@ -1998,7 +2050,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.12.1';
+var CURRENT_VERSION = '1.12.2';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
