@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="icon" type="image/png" sizes="512x512" href="./apple-touch-icon.png">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<title>Sadegh's Daily Tasks</title>
+<title>Daily Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -29,7 +29,7 @@
 
   /* ── Scroll container ── */
   .scroll-wrap { position:fixed; top:0; left:0; right:0;
-    bottom:calc(90px + var(--sb));
+    bottom:calc(70px + var(--sb));
     overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
     overscroll-behavior:contain; }
   /* هنگام swipe، ترنسفورم کارت به سمت انتهای محور افقی (در RTL: چپ)
@@ -171,6 +171,8 @@
   input:checked + .toggle-slider { background:var(--green); }
   input:checked + .toggle-slider:before { transform:translateX(20px); }
   .prog-wrap { display:flex; align-items:center; gap:6px; color:var(--gold); font-size:15px; font-weight:700; }
+  .prog-txt-col { display:flex; flex-direction:column; align-items:center; line-height:1.15; }
+  .prog-count { font-size:11px; font-weight:600; color:rgba(238,230,209,.75); }
   .hdr-right { display:flex; align-items:center; gap:6px; }
   .hdr-icon-btn { width:28px; height:28px; border-radius:50%; border:none; cursor:pointer;
     display:flex; align-items:center; justify-content:center; background:rgba(238,230,209,.12); }
@@ -301,7 +303,7 @@
 
   /* ── Footer + FAB ── */
   .footer { display:flex; align-items:center; justify-content:center;
-    height:calc(90px + var(--sb));
+    height:calc(70px + var(--sb));
     padding-bottom:calc(var(--sb)+10px);
     background:var(--green); position:fixed; bottom:0; left:0; right:0; z-index:200;
     border-radius:24px 24px 0 0;
@@ -309,7 +311,7 @@
   .footer-text { text-align:center; font-size:12px; color:rgba(238,230,209,.5); letter-spacing:.02em; margin-top:28px; }
   .footer-text span { color:var(--gold); font-weight:600; }
   .fab { position:fixed; left:50%; transform:translateX(-50%);
-    bottom:calc(var(--sb) + 62px);
+    bottom:calc(var(--sb) + 42px);
     width:50px; height:50px; border-radius:50%; border:none; cursor:pointer; z-index:201;
     display:flex; align-items:center; justify-content:center;
     background:linear-gradient(145deg,#f0c42a,#d4a818);
@@ -318,7 +320,7 @@
   .fab svg { width:22px; height:22px; color:#1e3012; }
 
   /* update notification fab */
-  .update-fab { display:none; position:fixed; bottom:calc(var(--sb) + 70px);
+  .update-fab { display:none; position:fixed; bottom:calc(var(--sb) + 50px);
     right:calc(14px + var(--sr)); z-index:202; height:36px; padding:0 16px;
     background:linear-gradient(145deg,#2fbf6e,#1f9c56); border:none; border-radius:99px;
     align-items:center; justify-content:center; gap:6px; cursor:pointer; font-size:13px;
@@ -397,6 +399,24 @@
 
   .recuropts { display:none; }
   .recuropts.show { display:block; }
+
+  /* option toggles in task form (one-time, postpone) */
+  .opt-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:4px 0 12px; }
+  .opt-label { font-size:17px; font-weight:600; color:var(--dgray); }
+  .opt-desc { font-size:13px; color:var(--lgray); line-height:1.6; margin-top:2px; }
+  #postponeRow { margin-top:12px; margin-bottom:0; }
+
+  /* star picker (1–3) */
+  .star-pick { display:flex; align-items:center; gap:8px; }
+  .star-btn { width:44px; height:40px; border-radius:12px; border:none; cursor:pointer;
+    font-size:22px; line-height:1; color:var(--sh1); background:var(--bg);
+    box-shadow: 3px 3px 8px var(--sh1), -2px -2px 6px var(--sh2); }
+  .star-btn.on { color:var(--gold); }
+  .star-hint { font-size:14px; color:var(--lgray); margin-right:4px; }
+  .cstars { color:var(--gold); font-size:14px; letter-spacing:1px; margin-right:6px; white-space:nowrap; }
+  .card.done .cstars { opacity:.5; }
+  .badge-once { display:inline-flex; font-size:13px; font-weight:700; padding:1px 6px; border-radius:8px;
+    background:rgba(39,60,26,.08); color:var(--green); margin-right:6px; vertical-align:middle; }
 
   .mbtns { display:flex; gap:10px; margin-top:18px; }
   .mbtn-p { flex:1; padding:13px; border-radius:var(--rs); font-size:18px; font-weight:700;
@@ -536,7 +556,7 @@
     <div class="hdr-left">
       <img class="hdr-logo-icon" src="data:image/png;base64,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" alt="">
       <div class="hdr-text-col">
-        <div class="hdr-title">Sadegh's Daily Tasks</div>
+        <div class="hdr-title">Daily Tasks</div>
         <div class="hdr-sub" id="hdrDate"></div>
       </div>
     </div>
@@ -562,7 +582,10 @@
         </svg>
       </button>
       <div class="prog-wrap">
-        <span id="progTxt">۰٪</span>
+        <div class="prog-txt-col">
+          <span id="progTxt">۰٪</span>
+          <bdi class="prog-count" id="progCount" dir="ltr">۰/۰</bdi>
+        </div>
         <svg class="prog-ring" viewBox="0 0 36 36">
           <circle class="ring-bg" cx="18" cy="18" r="15"/>
           <circle class="ring-fill" id="ringFill" cx="18" cy="18" r="15" stroke-dasharray="94.25" stroke-dashoffset="94.25"/>
@@ -657,11 +680,58 @@
       <div class="field" id="customDateWrap" style="display:none;">
         <label>تاریخ سررسید بعدی</label>
         <input type="date" id="fcustomDate"/>
+        <div class="opt-row" id="postponeRow" style="display:none;">
+          <div>
+            <div class="opt-label">تعویق</div>
+            <p class="opt-desc">همین حالا از امروز به تاریخ بالا منتقل شود. خاموش: امروز در روزانه می‌ماند و تاریخ بالا بعد از انجام اعمال می‌شود.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="fpostpone">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
       </div>
+    </div>
+    <div class="field">
+      <label>امتیاز</label>
+      <div class="star-pick" id="starPick">
+        <button type="button" class="star-btn" data-v="1" aria-label="۱ ستاره">★</button>
+        <button type="button" class="star-btn" data-v="2" aria-label="۲ ستاره">★</button>
+        <button type="button" class="star-btn" data-v="3" aria-label="۳ ستاره">★</button>
+        <span class="star-hint" id="starHint"></span>
+      </div>
+    </div>
+    <div class="opt-row" id="oneTimeRow">
+      <div>
+        <div class="opt-label">یک‌بار مصرف</div>
+        <p class="opt-desc">بعد از انجام، با ریست روز بعد حذف می‌شود و تکرار نمی‌شود</p>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="foneTime">
+        <span class="toggle-slider"></span>
+      </label>
     </div>
     <div class="mbtns">
       <button class="mbtn-s" id="cancelBtn">لغو</button>
       <button class="mbtn-p" id="saveBtn">ذخیره</button>
+    </div>
+  </div>
+</div>
+
+<!-- Next Custom Date Modal (Done on a «تاریخ مشخص» recurring task) -->
+<div class="overlay" id="nextDateOverlay">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">تاریخ مشخص بعدی</div>
+    <div class="confirm-name" id="nextDateTaskName"></div>
+    <div class="field" style="margin-top:14px;">
+      <label>سررسید بعدی این کار چه روزی باشد؟</label>
+      <input type="date" id="nextDateInput"/>
+      <p class="opt-desc" id="nextDateErr" style="color:#c0392b;display:none;">تاریخی بعد از امروز انتخاب کنید</p>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn-s" id="nextDateCancelBtn">لغو</button>
+      <button class="mbtn-p" id="nextDateOkBtn">ثبت انجام</button>
     </div>
   </div>
 </div>
@@ -840,6 +910,15 @@ function getDateLine(){
 let tasks=[],tab='daily',editId=null,ctype='daily';
 let formSubtasks=[]; // working copy of subtasks while the add/edit modal is open
 let searchQuery='';
+let formStars=1;            // امتیاز انتخاب‌شده در فرم افزودن/ویرایش (۱ تا ۳)
+let editWasDuePending=false; // آیا تسکِ در حال ویرایش، الان در تب روزانه انجام‌نشده نشسته است
+let nextDateTaskId=null;    // تسک «تاریخ مشخص» که منتظر انتخاب سررسید بعدی است
+
+/* امتیاز هر تسک ۱ تا ۳ ستاره است؛ تسک‌های قدیمی بدون این فیلد ۱ ستاره حساب می‌شوند. */
+function taskStars(t){
+  const s=Number(t&&t.stars);
+  return s>=1&&s<=3?Math.round(s):1;
+}
 
 function save(){localStorage.setItem('shakhes_tasks',JSON.stringify(tasks));}
 function load(){try{tasks=JSON.parse(localStorage.getItem('shakhes_tasks'))||[];}catch(e){tasks=[];}}
@@ -880,7 +959,10 @@ function showGrpDropdown(filter){
   dd.classList.add('open');
 }
 function hideGrpDropdown(){const dd=document.getElementById('grpDropdown');if(dd)dd.classList.remove('open');}
-function calcPctForDate(taskList,dateStr){
+/* آمار یک روز: درصد وزنی (بر اساس ستاره‌ها) به‌علاوه‌ی تعداد انجام‌شده از کل.
+   «کل» یعنی کارهای همان روز: روزانه‌ها به‌علاوه‌ی دوره‌ای‌های سررسیده
+   (یا انجام‌شده در همان روز)، بدون معاف‌ها. */
+function calcDayStats(taskList,dateStr){
   const daily=taskList.filter(t=>t.type==='daily');
   const dueR=taskList.filter(t=>t.type==='recurring'&&(
     isDueRecurring(t,dateStr) ||
@@ -889,7 +971,17 @@ function calcPctForDate(taskList,dateStr){
   /* تسک معاف از هر دو طرف کسر کنار گذاشته می‌شود تا درصد آن روز
      دست‌نخورده بماند (نه بالا برود، نه پایین). */
   const all=[...daily,...dueR].filter(t=>!isExempt(t,dateStr));
-  return all.length===0?0:Math.round(all.filter(t=>t.done).length/all.length*100);
+  const doneList=all.filter(t=>t.done);
+  const totalW=all.reduce((s,t)=>s+taskStars(t),0);
+  const doneW=doneList.reduce((s,t)=>s+taskStars(t),0);
+  return {
+    pct: totalW===0?0:Math.round(doneW/totalW*100),
+    done: doneList.length,
+    total: all.length
+  };
+}
+function calcPctForDate(taskList,dateStr){
+  return calcDayStats(taskList,dateStr).pct;
 }
 function daysBetween(dateStr1,dateStr2){
   const d1=parseLocalDate(dateStr1);const d2=parseLocalDate(dateStr2);
@@ -936,9 +1028,16 @@ function autoReset(){
       recordDailyStat(localDateStr(d),0);
     }
   }
+  /* تسک‌های یک‌بار مصرفی که روزهای قبل انجام شده‌اند حذف می‌شوند. این کار
+     عمداً بعد از ثبت آمار دیروز انجام می‌شود تا درصد آن روز دست نخورد.
+     یک‌بار مصرفِ انجام‌نشده باقی می‌ماند تا انجام شود. */
+  const beforeCount=tasks.length;
+  tasks=tasks.filter(t=>!(t.oneTime&&t.done&&t.doneDate!==todayStr()));
+  if(tasks.length!==beforeCount)changed=true;
   tasks.forEach(t=>{
     if(t.type==='daily'&&t.done&&t.doneDate!==todayStr()){t.done=false;t.doneDate=null;changed=true;}
-    if(t.type==='recurring'&&t.done&&t.nextDue&&t.nextDue<=tstr){t.done=false;t.doneDate=null;changed=true;}
+    /* یک‌بار مصرف سررسید بعدی ندارد؛ تیکش تا حذف در ریست روز بعد می‌ماند. */
+    if(t.type==='recurring'&&!t.oneTime&&t.done&&t.nextDue&&t.nextDue<=tstr){t.done=false;t.doneDate=null;changed=true;}
     if(isNewDay&&t.subtasks&&t.subtasks.length&&t.subtasks.every(s=>s.doneDate)){
       t.subtasks.forEach(s=>{s.doneDate=null;});
       changed=true;
@@ -950,8 +1049,10 @@ function autoReset(){
 
 function updateProgress(){
   const tstr=localDateStr();
-  const pct=calcPctForDate(tasks,tstr);
+  const st=calcDayStats(tasks,tstr);
+  const pct=st.pct;
   document.getElementById('progTxt').textContent=fp(pct)+'٪';
+  document.getElementById('progCount').textContent=fp(st.done)+'/'+fp(st.total);
   document.getElementById('ringFill').style.strokeDashoffset=94.25-(pct/100)*94.25;
 }
 
@@ -1128,7 +1229,11 @@ function makeCard(t,showRecurBadge){
   row.appendChild(chk);
 
   const titleEl=document.createElement('div');titleEl.className='cbody';
-  titleEl.innerHTML=`<div class="ctitle">${t.title}</div>`;
+  /* ستاره فقط برای کارهای ۲ و ۳ ستاره نمایش داده می‌شود تا کارت‌های ساده شلوغ نشوند. */
+  const st=taskStars(t);
+  const starsHtml=st>=2?`<span class="cstars">${'★'.repeat(st)}</span>`:'';
+  const onceHtml=t.oneTime?`<span class="badge-once" title="یک‌بار مصرف">۱×</span>`:'';
+  titleEl.innerHTML=`<div class="ctitle">${t.title}${starsHtml}${onceHtml}</div>`;
   titleEl.addEventListener('click',function(){if(isExempt(t))return;toggleTask(t.id);});
   row.appendChild(titleEl);
 
@@ -1148,6 +1253,11 @@ function makeCard(t,showRecurBadge){
   if(showRecurBadge){
     const cls=t.interval==='yearly'?'y':(t.interval==='monthly'?'m':'w');
     meta=`<span class="badge ${cls}" style="background:rgba(225,179,36,.15);color:#7A6000;">↻ ${ILABELS[t.interval]||''}</span>`;
+    /* تاریخی که در ویرایش برای «دفعه‌ی بعد» تعیین شده و با انجام اعمال می‌شود */
+    if(t.pendingDue&&t.pendingDue>localDateStr()){
+      const psh=toShamsiFixed(parseLocalDate(t.pendingDue));
+      meta+=` <span style="color:var(--lgray)">· دفعه‌ی بعد: ${fp(psh.d)} ${SHAMSI_M[psh.m-1]}</span>`;
+    }
     if(t.note)meta+=` · <span class="note-text">${escHtml(t.note)}</span>`;
   } else if(t.type==='recurring'){
     const cls=t.interval==='yearly'?'y':(t.interval==='monthly'?'m':'w');
@@ -1329,8 +1439,9 @@ function renderDaily(){
   /* معاف‌ها از لیست جاری بیرون کشیده و در بخش خودشان پایین صفحه نمایش داده می‌شوند. */
   const exempted=allActive.filter(t=>isExempt(t,tstr));
   const allPending=allActive.filter(t=>!isExempt(t,tstr));
-  const done=dailyTasks.filter(t=>t.done);
-  if(!dailyTasks.length&&!dueRecurring.length){
+  /* دوره‌ای یک‌بار مصرفِ انجام‌شده هم تا ریست روز بعد در «انجام شده» می‌ماند. */
+  const done=tasks.filter(t=>t.done&&taskMatchesSearch(t,searchQuery)&&(t.type==='daily'||(t.type==='recurring'&&t.oneTime)));
+  if(!dailyTasks.length&&!dueRecurring.length&&!done.length){
     if(searchQuery.trim()){
       c.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>نتیجه‌ای یافت نشد</p></div>`;
     } else {
@@ -1389,7 +1500,16 @@ function toggleTask(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   if(t.type==='daily'){t.done=!t.done;t.doneDate=t.done?todayStr():null;if(t.done){t.lastDoneDate=localDateStr();}}
   else{
-    if(!t.done){
+    if(!t.done && t.oneTime){
+      /* یک‌بار مصرف: سررسید بعدی ندارد؛ با ریست روز بعد حذف می‌شود. */
+      t.done=true;t.doneDate=todayStr();t.lastDoneDate=localDateStr();t.pendingDue=null;
+    }
+    else if(!t.done && t.interval==='custom'){
+      /* «تاریخ مشخص»: سررسید بعدی از کاربر پرسیده می‌شود؛ تیک بعد از تأیید زده می‌شود. */
+      openNextDate(t.id);
+      return;
+    }
+    else if(!t.done){
       const tstr=localDateStr();
       if(t.pendingDue && t.pendingDue>tstr){
         /* تاریخ دلخواهی که هنگام ویرایش به تعویق افتاده بود، حالا اعمال می‌شود. */
@@ -1401,6 +1521,39 @@ function toggleTask(id){
       t.done=true;t.doneDate=todayStr();t.lastDoneDate=localDateStr();
     } else{t.done=false;t.doneDate=null;}
   }
+  save();render();
+}
+
+/* ── پنجره‌ی انتخاب سررسید بعدی برای تسک‌های «تاریخ مشخص» ── */
+function openNextDate(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  nextDateTaskId=id;
+  const tstr=localDateStr();
+  const tm=new Date();tm.setDate(tm.getDate()+1);
+  const inp=document.getElementById('nextDateInput');
+  inp.min=localDateStr(tm);
+  /* اگر در ویرایش «دفعه‌ی بعد» تعیین شده، همان پیش‌فرض است */
+  inp.value=(t.pendingDue&&t.pendingDue>tstr)?t.pendingDue:'';
+  document.getElementById('nextDateTaskName').textContent=t.title;
+  document.getElementById('nextDateErr').style.display='none';
+  document.getElementById('nextDateOverlay').classList.add('open');
+}
+function closeNextDate(){
+  nextDateTaskId=null;
+  document.getElementById('nextDateOverlay').classList.remove('open');
+}
+function confirmNextDate(){
+  const t=tasks.find(x=>x.id===nextDateTaskId);
+  if(!t){closeNextDate();return;}
+  const v=document.getElementById('nextDateInput').value;
+  if(!v||v<=localDateStr()){
+    document.getElementById('nextDateErr').style.display='block';
+    document.getElementById('nextDateInput').focus();
+    return;
+  }
+  t.nextDue=v;t.pendingDue=null;
+  t.done=true;t.doneDate=todayStr();t.lastDoneDate=localDateStr();
+  closeNextDate();
   save();render();
 }
 let pendingDeleteId=null;
@@ -1439,6 +1592,8 @@ function duplicateTask(id){
     exemptDate:null,
     lastDoneDate:null,
     subtasks:(t.subtasks||[]).map(s=>({id:newId(),title:s.title,doneDate:null})),
+    stars:taskStars(t),
+    oneTime:!!t.oneTime,
     createdAt:localDateStr()
   };
   tasks.splice(i+1,0,copy);
@@ -1446,7 +1601,8 @@ function duplicateTask(id){
 }
 function manualReset(){
   tasks.forEach(t=>{
-    if(t.type==='daily'){t.done=false;t.doneDate=null;}
+    /* یک‌بار مصرف‌ها دست نمی‌خورند؛ فقط ریست خودکار روز بعد حذفشان می‌کند. */
+    if(t.type==='daily'&&!t.oneTime){t.done=false;t.doneDate=null;}
     if(t.subtasks&&t.subtasks.length&&t.subtasks.every(s=>s.doneDate)){
       t.subtasks.forEach(s=>{s.doneDate=null;});
     }
@@ -1468,6 +1624,10 @@ function openAdd(){
   document.getElementById('fgroup').value='';document.getElementById('finterval').value='weekly';
   document.getElementById('fcustomDate').value='';
   formSubtasks=[];renderSubEditor();
+  formStars=1;renderStarPick();
+  document.getElementById('foneTime').checked=false;
+  document.getElementById('fpostpone').checked=false;
+  editWasDuePending=false;
   updateTypeUI();document.getElementById('overlay').classList.add('open');
   setTimeout(()=>document.getElementById('finput').focus(),350);
 }
@@ -1477,9 +1637,14 @@ function openEdit(id){
   document.getElementById('mtitle').textContent='ویرایش کار';
   document.getElementById('finput').value=t.title;document.getElementById('fnote').value=t.note||'';
   document.getElementById('fgroup').value=t.group||'';document.getElementById('finterval').value=t.interval||'weekly';
-  document.getElementById('fcustomDate').value=(t.interval==='custom'&&t.nextDue)?t.nextDue:'';
+  /* اگر «دفعه‌ی بعد» از قبل تعیین شده، همان را نشان بده */
+  document.getElementById('fcustomDate').value=(t.interval==='custom')?(t.pendingDue||t.nextDue||''):'';
   formSubtasks=(t.subtasks||[]).map(s=>({id:s.id,title:s.title,doneDate:s.doneDate||null}));
   renderSubEditor();
+  formStars=taskStars(t);renderStarPick();
+  document.getElementById('foneTime').checked=!!t.oneTime;
+  document.getElementById('fpostpone').checked=false;
+  editWasDuePending=!t.done&&(t.type==='daily'||!t.nextDue||t.nextDue<=localDateStr());
   updateTypeUI();document.getElementById('overlay').classList.add('open');
 }
 function closeModal(){document.getElementById('overlay').classList.remove('open');}
@@ -1489,6 +1654,23 @@ function updateTypeUI(){
   document.getElementById('btn-recurring').classList.toggle('active',ctype==='recurring');
   document.getElementById('recuropts').classList.toggle('show',ctype==='recurring');
   document.getElementById('customDateWrap').style.display=document.getElementById('finterval').value==='custom'?'block':'none';
+  updateFormOptsUI();
+}
+/* «یک‌بار مصرف» فقط برای روزانه و دوره‌ایِ «تاریخ مشخص» معنا دارد؛
+   «تعویق» فقط وقتی کاری که الان در تب روزانه انجام‌نشده است ویرایش می‌شود. */
+function isCustomRecurringInForm(){
+  return ctype==='recurring'&&document.getElementById('finterval').value==='custom';
+}
+function updateFormOptsUI(){
+  document.getElementById('oneTimeRow').style.display=(ctype==='daily'||isCustomRecurringInForm())?'flex':'none';
+  document.getElementById('postponeRow').style.display=(editId&&editWasDuePending&&isCustomRecurringInForm())?'flex':'none';
+}
+const STAR_HINTS=['','ساده','متوسط','سنگین'];
+function renderStarPick(){
+  document.querySelectorAll('#starPick .star-btn').forEach(b=>{
+    b.classList.toggle('on',Number(b.dataset.v)<=formStars);
+  });
+  document.getElementById('starHint').textContent=STAR_HINTS[formStars]||'';
 }
 function renderSubEditor(){
   const list=document.getElementById('subEditorList');list.innerHTML='';
@@ -1554,6 +1736,12 @@ function saveTask(){
   const interval=ctype==='recurring'?document.getElementById('finterval').value:null;
   const customDate=document.getElementById('fcustomDate').value;
   if(interval==='custom'&&!customDate){document.getElementById('fcustomDate').focus();return;}
+  const oneTimeAllowed=ctype==='daily'||interval==='custom';
+  const oneTime=oneTimeAllowed&&document.getElementById('foneTime').checked;
+  const postponeShown=document.getElementById('postponeRow').style.display!=='none';
+  const postpone=postponeShown&&document.getElementById('fpostpone').checked;
+  /* تعویق یعنی انتقال به آینده؛ تاریخ امروز یا گذشته معنا ندارد */
+  if(postpone&&customDate<=localDateStr()){document.getElementById('fcustomDate').focus();return;}
   let nextDue=null;
   if(ctype==='recurring'){
     if(interval==='custom')nextDue=customDate;
@@ -1566,13 +1754,14 @@ function saveTask(){
     if(t){
       /* تسکی که همین حالا در تب روزانه انجام‌نشده نشسته است، نباید با ویرایش
          از آنجا خارج شود — چه دوره‌ای سررسیدشده باشد، چه روزانه‌ای که به
-         دوره‌ای تبدیل می‌شود. سررسید جدید از اولین تیک بعدی اعمال می‌گردد.
-         استثنا: تاریخ دلخواه در ویرایش یک تسک دوره‌ای، که تغییر زمان‌بندی
-         صریح است و فوراً اعمال می‌شود. */
+         دوره‌ای تبدیل می‌شود. سررسید جدید از اولین تیک بعدی اعمال می‌گردد
+         (برای «تاریخ مشخص»، به‌عنوان پیش‌فرض پنجره‌ی انتخاب تاریخ).
+         تنها راه خارج کردن فوری از تب روزانه، روشن کردن گزینه‌ی «تعویق» است. */
       const wasDaily = t.type==='daily';
       const wasDuePending = !t.done && (wasDaily || !t.nextDue || t.nextDue<=localDateStr());
-      const applyNow = !wasDuePending || (interval==='custom' && !wasDaily);
+      const applyNow = !wasDuePending || postpone;
       t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;
+      t.stars=formStars;t.oneTime=oneTime;
       if(ctype==='recurring'){
         if(applyNow){t.nextDue=nextDue;t.pendingDue=null;}
         else{
@@ -1584,7 +1773,7 @@ function saveTask(){
       t.subtasks=subtasks;
     }
   } else {
-    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,pendingDue:null,exemptDate:null,subtasks,createdAt:localDateStr()});
+    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,pendingDue:null,exemptDate:null,subtasks,stars:formStars,oneTime,createdAt:localDateStr()});
   }
   save();closeModal();render();
 }
@@ -1805,7 +1994,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.11.4';
+var CURRENT_VERSION = '1.12.0';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -1949,9 +2138,16 @@ document.getElementById('saveBtn').addEventListener('click',saveTask);
 document.getElementById('subAddBtn').addEventListener('click',addSubEditorItem);
 document.getElementById('btn-daily').addEventListener('click',function(){setType('daily');});
 document.getElementById('btn-recurring').addEventListener('click',function(){setType('recurring');});
+document.querySelectorAll('#starPick .star-btn').forEach(function(b){
+  b.addEventListener('click',function(){formStars=Number(this.dataset.v)||1;renderStarPick();});
+});
+document.getElementById('nextDateOkBtn').addEventListener('click',confirmNextDate);
+document.getElementById('nextDateCancelBtn').addEventListener('click',closeNextDate);
+document.getElementById('nextDateOverlay').addEventListener('click',function(e){if(e.target===this)closeNextDate();});
 document.getElementById('finterval').addEventListener('change',function(){
   const isCustom = this.value === 'custom';
   document.getElementById('customDateWrap').style.display = isCustom ? 'block' : 'none';
+  updateFormOptsUI();
   if(isCustom){
     const dateInput = document.getElementById('fcustomDate');
     dateInput.focus();
