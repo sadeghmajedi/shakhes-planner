@@ -251,7 +251,7 @@
     box-shadow: 2px 2px 4px var(--sh1), -1px -1px 3px var(--sh2); }
 
   /* check */
-  .chk { width:26px; height:26px; border-radius:50%; flex-shrink:0; cursor:pointer;
+  .chk { position:relative; width:26px; height:26px; border-radius:50%; flex-shrink:0; cursor:pointer;
     background:var(--bg);
     box-shadow: 4px 4px 8px var(--sh1), -3px -3px 6px var(--sh2); }
   .card.done .chk {
@@ -259,6 +259,9 @@
     box-shadow: 2px 2px 6px rgba(0,0,0,.25), inset 1px 1px 3px rgba(255,255,255,.1);
     display:flex; align-items:center; justify-content:center; }
   .chk svg { display:none; }
+  /* سوییچ بومیِ نامرئی روی دایره‌ی تیک (برای لرزش iOS) — کمی بزرگ‌تر از دایره تا لمس راحت باشد */
+  .chk-switch { position:absolute; top:-7px; left:-7px; width:40px; height:40px; margin:0;
+    opacity:0; cursor:pointer; z-index:1; }
   .card.done .chk svg { display:block; }
 
   /* body */
@@ -1244,16 +1247,36 @@ function makeCard(t,showRecurBadge){
 
   const chk=document.createElement('div');chk.className='chk';
   chk.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-  chk.addEventListener('click',function(e){e.stopPropagation();if(isExempt(t))return;toggleTask(t.id);});
+  /* لرزش در آیفون: iOS فقط وقتی لرزش سیستمی می‌دهد که انگشت کاربر واقعاً یک
+     سوییچ بومی (<input type="checkbox" switch>) را بزند؛ تغییر آن با کد اثری ندارد.
+     پس روی دایره‌ی تیکِ کارهای انجام‌نشده یک سوییچ واقعی و نامرئی قرار می‌گیرد و
+     عنوان کار هم <label> همان سوییچ است. برای برداشتن تیک و کارهای معاف سوییچی
+     در کار نیست، پس لرزشی هم ندارند. */
+  const canHaptic=!t.done&&!ex;
+  let sw=null;
+  if(canHaptic){
+    sw=document.createElement('input');
+    sw.type='checkbox';sw.setAttribute('switch','');sw.className='chk-switch';
+    sw.id='sw-'+t.id;sw.tabIndex=-1;sw.setAttribute('aria-label','انجام شد');
+    chk.appendChild(sw);
+  }
+  chk.addEventListener('click',function(e){
+    e.stopPropagation();if(isExempt(t))return;
+    /* کمی تأخیر تا سوییچ قبل از بازسازی کارت، لرزشش را کامل کند */
+    if(sw&&e.target===sw){setTimeout(function(){toggleTask(t.id);},30);return;}
+    toggleTask(t.id);
+  });
   row.appendChild(chk);
 
-  const titleEl=document.createElement('div');titleEl.className='cbody';
+  const titleEl=document.createElement(canHaptic?'label':'div');titleEl.className='cbody';
+  if(canHaptic)titleEl.htmlFor=sw.id;
   /* ستاره فقط برای کارهای ۲ و ۳ ستاره نمایش داده می‌شود تا کارت‌های ساده شلوغ نشوند. */
   const st=taskStars(t);
   const starsHtml=st>=2?`<span class="cstars">${'★'.repeat(st)}</span>`:'';
   const onceHtml=t.oneTime?`<span class="badge-once" title="یک‌بار مصرف">۱×</span>`:'';
   titleEl.innerHTML=`<div class="ctitle">${t.title}${starsHtml}${onceHtml}</div>`;
-  titleEl.addEventListener('click',function(){if(isExempt(t))return;toggleTask(t.id);});
+  /* وقتی عنوان label سوییچ است، لمس آن خودِ سوییچ را می‌زند و کلیکش به دایره‌ی تیک می‌رسد */
+  if(!canHaptic)titleEl.addEventListener('click',function(){if(isExempt(t))return;toggleTask(t.id);});
   row.appendChild(titleEl);
 
   const acts=document.createElement('div');acts.className='cactions';
@@ -1515,22 +1538,11 @@ function renderRecurring(){
   }
 }
 
-/* لرزش کوتاه هنگام انجام کار. باید مستقیم داخل رویداد لمس صدا زده شود.
-   اندروید/کروم: navigator.vibrate؛ آیفون (iOS 18+): کلیک روی سوییچ پنهان.
-   در نسخه‌های قدیمی‌تر iOS بی‌صدا هیچ کاری نمی‌کند. */
+/* لرزش کوتاه هنگام انجام کار برای اندروید/کروم (navigator.vibrate).
+   آیفون این API را ندارد و لرزشش از سوییچ نامرئی روی دایره‌ی تیک می‌آید (makeCard).
+   (کلیک روی سوییچ با کد در v1.12.2 امتحان شد و روی iOS 26 اثری نداشت.) */
 function haptic(){
-  try{
-    if(navigator.vibrate&&navigator.vibrate(12))return;
-    /* از iOS 18، تغییر وضعیت <input type="checkbox" switch> لرزش سیستمی می‌دهد؛
-       یک سوییچ موقت و پنهان ساخته، کلیک و بلافاصله حذف می‌شود. */
-    const l=document.createElement('label');
-    l.setAttribute('aria-hidden','true');l.style.display='none';
-    const i=document.createElement('input');
-    i.type='checkbox';i.setAttribute('switch','');
-    l.appendChild(i);document.head.appendChild(l);
-    l.click();
-    document.head.removeChild(l);
-  }catch(e){}
+  try{ if(navigator.vibrate)navigator.vibrate(12); }catch(e){}
 }
 function toggleTask(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
@@ -2050,7 +2062,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.12.2';
+var CURRENT_VERSION = '1.12.3';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
