@@ -16,8 +16,9 @@
   :root {
     /* پالت Golden Summer Fields: CCD5AE · E9EDC9 · FEFAE0 · FAEDCD · D4A373
        --green از این نسخه «رنگ متن تیره» است (پالت رنگ تیره ندارد؛ برای خوانایی
-       از همان طیف زیتونی-قهوه‌ای ساخته شده). پس‌زمینه‌ی نوارها --bar است. */
-    --green:#3D3A28; --bar:#CCD5AE; --sage-l:#E9EDC9; --peach:#FAEDCD;
+       از همان طیف زیتونی-قهوه‌ای ساخته شده). پس‌زمینه‌ی نوارها --bar است
+       (از v1.13.0 به درخواست کاربر #626654 به‌جای CCD5AE) و متن روی آن --on-bar. */
+    --green:#3D3A28; --bar:#626654; --on-bar:#FEFAE0; --sage-l:#E9EDC9; --peach:#FAEDCD;
     --gold:#D4A373; --gold-d:#8E5F33; --cream:#FAEDCD;
     --dgray:#5A5643; --lgray:#9A957F;
     --bg:#FEFAE0; --sh1:#DDD7B6; --sh2:#ffffff;
@@ -32,6 +33,8 @@
   body { font-family:'Vazirmatn',sans-serif; background:var(--bg); color:var(--green); font-size:16px; }
 
   /* ── Scroll container ── */
+  /* نوار ثابت بالا (هدر + تب‌ها). top ناحیه‌ی اسکرول با fixTopOffset() برابر ارتفاع آن می‌شود. */
+  .top-fixed { position:fixed; top:0; left:0; right:0; z-index:100; }
   .scroll-wrap { position:fixed; top:0; left:0; right:0;
     bottom:calc(70px + var(--sb));
     overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
@@ -50,14 +53,14 @@
   /* ── Header ── */
   .hdr { background:var(--bar);
     padding:calc(var(--st) + 10px) calc(8px + var(--sr)) 10px calc(8px + var(--sl));
-    position:sticky; top:0; z-index:100;
+    position:relative; z-index:2;
     box-shadow:0 2px 10px rgba(61,58,40,.15); }
   @supports (padding-top:env(safe-area-inset-top)){
     .hdr { padding-top:calc(env(safe-area-inset-top) + 10px); }
   }
 
   /* ── Tabs wrapper ── */
-  .tabs-wrap { position:sticky; top:var(--hdr-h, 120px); z-index:90;
+  .tabs-wrap { position:relative; z-index:1;
     background:var(--bar); padding:12px calc(20px + var(--sr)) 12px calc(20px + var(--sl));
     box-shadow:0 4px 12px rgba(0,0,0,.15); }
 
@@ -78,8 +81,8 @@
   .hdr-inner { display:flex; align-items:center; justify-content:space-between; padding-bottom:0; padding-right:8px; padding-left:8px; }
   .hdr-left { display:flex; align-items:center; gap:10px; min-width:0; }
   .hdr-text-col { display:flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:0; }
-  .hdr-sub { font-size:11px; color:rgba(61,58,40,.6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-  .hdr-title { color:var(--green); font-size:14px; font-weight:700; letter-spacing:.02em; }
+  .hdr-sub { font-size:11px; color:rgba(254,250,224,.65); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .hdr-title { color:var(--on-bar); font-size:14px; font-weight:700; letter-spacing:.02em; }
   .hdr-logo-icon { width:36px; height:36px; object-fit:contain; border-radius:50%; flex-shrink:0; }
 
   /* splash screen */
@@ -109,7 +112,7 @@
   .pin-dot.filled { background:var(--green); }
   .pin-pad { display:grid; grid-template-columns:repeat(3,64px); gap:16px; }
   .pin-key { width:64px; height:64px; border-radius:50%; border:none; cursor:pointer;
-    font-size:22px; font-weight:700; color:var(--green); background:var(--bar);
+    font-size:22px; font-weight:700; color:var(--on-bar); background:var(--bar);
     display:flex; align-items:center; justify-content:center; font-family:'Vazirmatn',sans-serif; }
   .pin-key:active { transform:scale(0.93); }
   .pin-key.empty { background:transparent; pointer-events:none; }
@@ -127,9 +130,9 @@
     .stats-hdr { padding-top:calc(env(safe-area-inset-top) + 10px); }
   }
   .stats-back-btn { width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; background:rgba(254,250,224,.6); }
-  .stats-back-btn svg { width:17px; height:17px; color:var(--green); }
-  .stats-title { font-size:15px; font-weight:700; color:var(--green); }
+    display:flex; align-items:center; justify-content:center; background:rgba(254,250,224,.14); }
+  .stats-back-btn svg { width:17px; height:17px; color:var(--on-bar); }
+  .stats-title { font-size:15px; font-weight:700; color:var(--on-bar); }
   .stats-spacer { width:30px; }
   .stats-body { flex:1; overflow-y:auto; padding:16px calc(16px + var(--sr)) calc(24px + var(--sb)) calc(16px + var(--sl));
     -webkit-overflow-scrolling:touch; }
@@ -174,22 +177,22 @@
     background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.3); }
   input:checked + .toggle-slider { background:var(--gold); }
   input:checked + .toggle-slider:before { transform:translateX(20px); }
-  .prog-wrap { display:flex; align-items:center; gap:6px; color:var(--gold-d); font-size:15px; font-weight:700; }
+  .prog-wrap { display:flex; align-items:center; gap:6px; color:var(--peach); font-size:15px; font-weight:700; }
   .prog-txt-col { display:flex; flex-direction:column; align-items:center; line-height:1.15; }
-  .prog-count { font-size:11px; font-weight:600; color:rgba(61,58,40,.7); }
+  .prog-count { font-size:11px; font-weight:600; color:rgba(254,250,224,.75); }
   .hdr-right { display:flex; align-items:center; gap:6px; }
   .hdr-icon-btn { width:28px; height:28px; border-radius:50%; border:none; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; background:rgba(254,250,224,.6); }
-  .hdr-icon-btn svg { width:16px; height:16px; color:var(--green); }
+    display:flex; align-items:center; justify-content:center; background:rgba(254,250,224,.14); }
+  .hdr-icon-btn svg { width:16px; height:16px; color:var(--on-bar); }
   .prog-ring { width:24px; height:24px; }
   .prog-ring circle { fill:none; stroke-width:3; transform:rotate(-90deg); transform-origin:50% 50%; }
-  .ring-bg { stroke:rgba(61,58,40,.15); }
+  .ring-bg { stroke:rgba(254,250,224,.22); }
   .ring-fill { stroke:var(--gold); stroke-linecap:round; transition:stroke-dashoffset .5s; }
 
   /* ── Tabs ── */
   .tabs { display:flex; gap:8px; }
   .tab { flex:1; padding:9px 0; border-radius:14px; font-size:18px; font-weight:600;
-    color:var(--green); background:rgba(254,250,224,.45); border:none; cursor:pointer;
+    color:var(--on-bar); background:rgba(254,250,224,.12); border:none; cursor:pointer;
     font-family:'Vazirmatn',sans-serif; box-shadow:none; }
   .tab.active {
     color:var(--green); font-weight:700;
@@ -315,8 +318,8 @@
     background:var(--bar); position:fixed; bottom:0; left:0; right:0; z-index:200;
     border-radius:24px 24px 0 0;
     box-shadow:0 -4px 20px rgba(61,58,40,.2); }
-  .footer-text { text-align:center; font-size:12px; color:rgba(61,58,40,.55); letter-spacing:.02em; margin-top:28px; }
-  .footer-text span { color:var(--gold-d); font-weight:600; }
+  .footer-text { text-align:center; font-size:12px; color:rgba(254,250,224,.6); letter-spacing:.02em; margin-top:28px; }
+  .footer-text span { color:var(--peach); font-weight:600; }
   .fab { position:fixed; left:50%; transform:translateX(-50%);
     bottom:calc(var(--sb) + 42px);
     width:50px; height:50px; border-radius:50%; border:none; cursor:pointer; z-index:201;
@@ -412,6 +415,24 @@
   .opt-label { font-size:17px; font-weight:600; color:var(--dgray); }
   .opt-desc { font-size:13px; color:var(--lgray); line-height:1.6; margin-top:2px; }
   #postponeRow { margin-top:12px; margin-bottom:0; }
+
+  /* weekday picker (daily tasks) */
+  .day-pick { display:flex; gap:5px; }
+  .day-btn { flex:1; height:38px; border-radius:10px; border:none; cursor:pointer; padding:0;
+    font-size:16px; font-weight:700; font-family:'Vazirmatn',sans-serif; color:var(--lgray); background:var(--bg);
+    box-shadow: 3px 3px 7px var(--sh1), -2px -2px 5px var(--sh2); }
+  .day-btn.on { color:var(--green); background:linear-gradient(145deg,#DDB287,#C99460);
+    box-shadow: 2px 2px 6px rgba(150,100,50,.3); }
+  .day-presets { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .day-preset { border:none; border-radius:99px; padding:5px 12px; cursor:pointer; font-size:13px; font-weight:600;
+    font-family:'Vazirmatn',sans-serif; color:var(--gold-d); background:rgba(212,163,115,.15); }
+  .badge-days { display:inline-flex; font-size:14px; font-weight:600; padding:1px 7px; border-radius:8px;
+    background:rgba(98,102,84,.1); color:var(--dgray); }
+  /* بخش «خارج از برنامه‌ی امروز» */
+  .offday-hdr { width:100%; border:none; background:transparent; cursor:pointer; font-family:'Vazirmatn',sans-serif; padding:0; }
+  .offday-arrow { display:inline-block; font-size:13px; transition:transform .2s; }
+  .offday-hdr:not(.open) .offday-arrow { transform:rotate(90deg); }
+  .card.offday { opacity:.75; }
 
   /* star picker (1–3) */
   .star-pick { display:flex; align-items:center; gap:8px; }
@@ -556,8 +577,8 @@
   </div>
 </div>
 
-<div class="scroll-wrap" id="scrollWrap">
-
+<!-- هدر و تب‌ها بیرون از ناحیه‌ی اسکرول‌اند تا با اسکرول یا حالت فنری (کشیدن صفحه در iOS) تکان نخورند -->
+<div class="top-fixed" id="topFixed">
 <div class="hdr">
 
   <div class="hdr-inner">
@@ -609,6 +630,10 @@
     <button class="tab" id="tab-recurring">دوره‌ای</button>
   </div>
 </div>
+
+</div><!-- end top-fixed -->
+
+<div class="scroll-wrap" id="scrollWrap">
 
 <div class="search-wrap" id="searchWrap">
   <div class="search-box">
@@ -699,6 +724,23 @@
           </label>
         </div>
       </div>
+    </div>
+    <div class="field" id="daysField">
+      <label>روزهای هفته</label>
+      <div class="day-pick" id="dayPick">
+        <button type="button" class="day-btn" data-d="6">ش</button>
+        <button type="button" class="day-btn" data-d="0">ی</button>
+        <button type="button" class="day-btn" data-d="1">د</button>
+        <button type="button" class="day-btn" data-d="2">س</button>
+        <button type="button" class="day-btn" data-d="3">چ</button>
+        <button type="button" class="day-btn" data-d="4">پ</button>
+        <button type="button" class="day-btn" data-d="5">ج</button>
+      </div>
+      <div class="day-presets">
+        <button type="button" class="day-preset" id="dayAllBtn">هر روز</button>
+        <button type="button" class="day-preset" id="dayWorkBtn">روزهای کاری (شنبه تا پنجشنبه)</button>
+      </div>
+      <p class="opt-desc" id="daysErr" style="color:#c0392b;display:none;">حداقل یک روز را انتخاب کنید</p>
     </div>
     <div class="field">
       <label>امتیاز</label>
@@ -922,6 +964,29 @@ let formStars=1;            // امتیاز انتخاب‌شده در فرم ا
 let editWasDuePending=false; // آیا تسکِ در حال ویرایش، الان در تب روزانه انجام‌نشده نشسته است
 let nextDateTaskId=null;    // تسک «تاریخ مشخص» که منتظر انتخاب سررسید بعدی است
 
+/* روزهای هفته (v1.13.0): فیلد اختیاری days روی تسک روزانه = آرایه‌ای از شماره‌ی
+   روز طبق getDay() (۰ یکشنبه … ۶ شنبه). نبودنش یا هر ۷ روز یعنی «هر روز».
+   در روزهای خارج از برنامه، تسک در لیست امروز نمی‌آید (بخش جمع‌شده‌ی پایین صفحه)
+   و در درصد و شمارنده‌ی آن روز حساب نمی‌شود. */
+const WEEK_ORDER=[6,0,1,2,3,4,5];                 // ترتیب نمایش: شنبه تا جمعه
+const DAY_SHORT={6:'ش',0:'ی',1:'د',2:'س',3:'چ',4:'پ',5:'ج'};
+const WORKDAYS=[6,0,1,2,3,4];                     // میان‌بر «روزهای کاری»: شنبه تا پنجشنبه
+let formDays=new Set(WEEK_ORDER);                 // روزهای انتخاب‌شده در فرم
+let offDayOpen=false;                             // باز/بسته بودن بخش «خارج از برنامه‌ی امروز»
+function hasDaySchedule(t){
+  return !!(t&&t.type==='daily'&&Array.isArray(t.days)&&t.days.length>0&&t.days.length<7);
+}
+function isScheduledOn(t,dateStr){
+  if(!hasDaySchedule(t))return true;
+  const d=parseLocalDate(dateStr||localDateStr());
+  return !d||t.days.includes(d.getDay());
+}
+function daysLabel(t){
+  if(!hasDaySchedule(t))return'';
+  const set=new Set(t.days);
+  if(set.size===WORKDAYS.length&&WORKDAYS.every(d=>set.has(d)))return'شنبه تا پنجشنبه';
+  return WEEK_ORDER.filter(d=>set.has(d)).map(d=>DAY_SHORT[d]).join('، ');
+}
 /* امتیاز هر تسک ۱ تا ۳ ستاره است؛ تسک‌های قدیمی بدون این فیلد ۱ ستاره حساب می‌شوند. */
 function taskStars(t){
   const s=Number(t&&t.stars);
@@ -985,7 +1050,7 @@ function hideGrpDropdown(){const dd=document.getElementById('grpDropdown');if(dd
    «کل» یعنی کارهای همان روز: روزانه‌ها به‌علاوه‌ی دوره‌ای‌های سررسیده
    (یا انجام‌شده در همان روز)، بدون معاف‌ها. */
 function calcDayStats(taskList,dateStr){
-  const daily=taskList.filter(t=>t.type==='daily');
+  const daily=taskList.filter(t=>t.type==='daily'&&isScheduledOn(t,dateStr));
   const dueR=taskList.filter(t=>t.type==='recurring'&&(
     isDueRecurring(t,dateStr) ||
     (t.done&&t.doneDate===parseLocalDate(dateStr).toDateString())
@@ -1022,7 +1087,14 @@ function getTaskAgeClass(t){
     sinceStr=t.nextDue;
     if(t.lastDoneDate&&t.lastDoneDate>=sinceStr){return'';}
   } else return'';
-  const age=daysBetween(sinceStr,tstr);
+  let age=daysBetween(sinceStr,tstr);
+  if(hasDaySchedule(t)){
+    /* امروز خارج از برنامه است → رنگ عقب‌افتادگی ندارد؛ وگرنه فقط روزهای برنامه شمرده می‌شوند */
+    if(!isScheduledOn(t,tstr))return'';
+    const start=parseLocalDate(sinceStr);let n=0;
+    for(let i=1;i<=Math.min(age,60);i++){const d=new Date(start);d.setDate(d.getDate()+i);if(t.days.includes(d.getDay()))n++;}
+    age=n;
+  }
   if(age>=6)return'age-6';
   if(age>=5)return'age-5';
   if(age>=4)return'age-4';
@@ -1320,7 +1392,11 @@ function makeCard(t,showRecurBadge){
         else meta+=` <span style="color:var(--lgray)">· ${fp(d)} روز دیگر</span>`;
       }
     }
-  } else {if(t.note)meta=`<span class="note-text">${escHtml(t.note)}</span>`;}
+  } else {
+    const dl=daysLabel(t);
+    if(dl)meta=`<span class="badge-days">${dl}</span>`;
+    if(t.note)meta+=(meta?' · ':'')+`<span class="note-text">${escHtml(t.note)}</span>`;
+  }
 
   if(ex){
     meta=`<span class="badge-exempt">معاف امروز</span><span class="exempt-hint">· برای بازگرداندن، بکشید</span>`
@@ -1476,7 +1552,8 @@ function renderDaily(){
   const dueIds=new Set(dueRecurring.map(t=>t.id));
   /* ترتیب نمایش از آرایه‌ی سراسری tasks گرفته می‌شود (نه الحاق دو لیست)،
      تا تسک دوره‌ای بتواند هر جای لیست گروه بنشیند و جابجایی با drag ماندگار شود. */
-  const pendingIds=new Set(dailyTasks.filter(t=>!t.done).map(t=>t.id));
+  const pendingIds=new Set(dailyTasks.filter(t=>!t.done&&isScheduledOn(t,tstr)).map(t=>t.id));
+  const offDay=tasks.filter(t=>t.type==='daily'&&!t.done&&!isScheduledOn(t,tstr)&&taskMatchesSearch(t,searchQuery));
   const allActive=tasks.filter(t=>pendingIds.has(t.id)||dueIds.has(t.id));
   /* معاف‌ها از لیست جاری بیرون کشیده و در بخش خودشان پایین صفحه نمایش داده می‌شوند. */
   const exempted=allActive.filter(t=>isExempt(t,tstr));
@@ -1501,6 +1578,14 @@ function renderDaily(){
     const sep=document.createElement('div');sep.className='sec-hdr';
     sep.innerHTML=`<span class="sec-title">معاف امروز</span><span class="sec-count">${fp(exempted.length)} کار</span>`;
     c.appendChild(sep);exempted.forEach(t=>c.appendChild(makeCard(t,dueIds.has(t.id))));
+  }
+  if(offDay.length){
+    /* کارهایی که امروز در برنامه‌شان نیست: جمع‌شده، با لمس باز/بسته می‌شود */
+    const sep=document.createElement('button');sep.type='button';sep.className='sec-hdr offday-hdr'+(offDayOpen?' open':'');
+    sep.innerHTML=`<span class="sec-title">خارج از برنامه‌ی امروز <span class="offday-arrow">▾</span></span><span class="sec-count">${fp(offDay.length)} کار</span>`;
+    sep.addEventListener('click',function(){offDayOpen=!offDayOpen;render();});
+    c.appendChild(sep);
+    if(offDayOpen)offDay.forEach(t=>{const card=makeCard(t,false);card.classList.add('offday');c.appendChild(card);});
   }
   if(done.length){
     const sep=document.createElement('div');sep.className='sec-hdr';
@@ -1645,6 +1730,7 @@ function duplicateTask(id){
     subtasks:(t.subtasks||[]).map(s=>({id:newId(),title:s.title,doneDate:null})),
     stars:taskStars(t),
     oneTime:!!t.oneTime,
+    days:hasDaySchedule(t)?t.days.slice():null,
     createdAt:localDateStr()
   };
   tasks.splice(i+1,0,copy);
@@ -1676,6 +1762,7 @@ function openAdd(){
   document.getElementById('fcustomDate').value='';
   formSubtasks=[];renderSubEditor();
   formStars=1;renderStarPick();
+  formDays=new Set(WEEK_ORDER);renderDayPick();
   document.getElementById('foneTime').checked=false;
   document.getElementById('fpostpone').checked=false;
   editWasDuePending=false;
@@ -1693,6 +1780,7 @@ function openEdit(id){
   formSubtasks=(t.subtasks||[]).map(s=>({id:s.id,title:s.title,doneDate:s.doneDate||null}));
   renderSubEditor();
   formStars=taskStars(t);renderStarPick();
+  formDays=new Set(hasDaySchedule(t)?t.days:WEEK_ORDER);renderDayPick();
   document.getElementById('foneTime').checked=!!t.oneTime;
   document.getElementById('fpostpone').checked=false;
   editWasDuePending=!t.done&&(t.type==='daily'||!t.nextDue||t.nextDue<=localDateStr());
@@ -1712,7 +1800,12 @@ function updateTypeUI(){
 function isCustomRecurringInForm(){
   return ctype==='recurring'&&document.getElementById('finterval').value==='custom';
 }
+function renderDayPick(){
+  document.querySelectorAll('#dayPick .day-btn').forEach(b=>b.classList.toggle('on',formDays.has(Number(b.dataset.d))));
+  document.getElementById('daysErr').style.display='none';
+}
 function updateFormOptsUI(){
+  document.getElementById('daysField').style.display=ctype==='daily'?'block':'none';
   document.getElementById('oneTimeRow').style.display=(ctype==='daily'||isCustomRecurringInForm())?'flex':'none';
   document.getElementById('postponeRow').style.display=(editId&&editWasDuePending&&isCustomRecurringInForm())?'flex':'none';
 }
@@ -1787,6 +1880,9 @@ function saveTask(){
   const interval=ctype==='recurring'?document.getElementById('finterval').value:null;
   const customDate=document.getElementById('fcustomDate').value;
   if(interval==='custom'&&!customDate){document.getElementById('fcustomDate').focus();return;}
+  if(ctype==='daily'&&formDays.size===0){document.getElementById('daysErr').style.display='block';return;}
+  /* هر ۷ روز = بدون محدودیت (فیلد ذخیره نمی‌شود) */
+  const days=(ctype==='daily'&&formDays.size<7)?WEEK_ORDER.filter(d=>formDays.has(d)):null;
   const oneTimeAllowed=ctype==='daily'||interval==='custom';
   const oneTime=oneTimeAllowed&&document.getElementById('foneTime').checked;
   const postponeShown=document.getElementById('postponeRow').style.display!=='none';
@@ -1813,7 +1909,7 @@ function saveTask(){
       const applyNow = !wasDuePending || postpone;
       const prevType=t.type, prevInterval=t.interval;
       t.title=title;t.note=document.getElementById('fnote').value.trim();t.type=ctype;t.interval=interval;t.group=group;
-      t.stars=formStars;t.oneTime=oneTime;
+      t.stars=formStars;t.oneTime=oneTime;t.days=days;
       if(ctype==='recurring'){
         if(applyNow){
           /* ویرایش عنوان، توضیح، ستاره و... نباید سررسید را جابجا کند. سررسید فقط
@@ -1841,7 +1937,7 @@ function saveTask(){
       t.subtasks=subtasks;
     }
   } else {
-    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,pendingDue:null,exemptDate:null,subtasks,stars:formStars,oneTime,createdAt:localDateStr()});
+    tasks.push({id:Date.now().toString(),title,note:document.getElementById('fnote').value.trim(),type:ctype,interval,group,done:false,doneDate:null,nextDue,pendingDue:null,exemptDate:null,subtasks,stars:formStars,oneTime,days,createdAt:localDateStr()});
   }
   save();closeModal();render();
 }
@@ -2062,7 +2158,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.12.3';
+var CURRENT_VERSION = '1.13.0';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -2206,6 +2302,11 @@ document.getElementById('saveBtn').addEventListener('click',saveTask);
 document.getElementById('subAddBtn').addEventListener('click',addSubEditorItem);
 document.getElementById('btn-daily').addEventListener('click',function(){setType('daily');});
 document.getElementById('btn-recurring').addEventListener('click',function(){setType('recurring');});
+document.querySelectorAll('#dayPick .day-btn').forEach(function(b){
+  b.addEventListener('click',function(){const d=Number(this.dataset.d);formDays.has(d)?formDays.delete(d):formDays.add(d);renderDayPick();});
+});
+document.getElementById('dayAllBtn').addEventListener('click',function(){formDays=new Set(WEEK_ORDER);renderDayPick();});
+document.getElementById('dayWorkBtn').addEventListener('click',function(){formDays=new Set(WORKDAYS);renderDayPick();});
 document.querySelectorAll('#starPick .star-btn').forEach(function(b){
   b.addEventListener('click',function(){formStars=Number(this.dataset.v)||1;renderStarPick();});
 });
@@ -2296,12 +2397,16 @@ setTimeout(function(){
 }, 2100);
 setInterval(function(){autoReset();render();},60000);
 
-function fixTabsTop(){
-  const hdrH = document.querySelector('.hdr').offsetHeight;
-  document.querySelector('.tabs-wrap').style.top = hdrH + 'px';
+/* ناحیه‌ی اسکرول دقیقاً زیر نوار ثابت بالا شروع می‌شود. ارتفاع نوار بعد از
+   بارگذاری فونت یا تغییر اندازه عوض می‌شود، پس با ResizeObserver به‌روز می‌ماند. */
+function fixTopOffset(){
+  const h = document.getElementById('topFixed').offsetHeight;
+  document.getElementById('scrollWrap').style.top = h + 'px';
 }
-fixTabsTop();
-window.addEventListener('resize', fixTabsTop);
+fixTopOffset();
+window.addEventListener('resize', fixTopOffset);
+if (window.ResizeObserver) new ResizeObserver(fixTopOffset).observe(document.getElementById('topFixed'));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fixTopOffset);
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(function(){});
   var swRefreshing = false;
