@@ -95,14 +95,17 @@
   .splash-mark { width:min(78vw, 300px); height:auto; display:block; overflow:visible; }
   .splash-ring { fill:none; stroke:var(--gold); stroke-width:7; stroke-linecap:round;
     stroke-dasharray:1; stroke-dashoffset:1;
-    animation: splashRing .8s ease-in-out .1s forwards, splashRingFade .6s ease .95s forwards; }
+    animation: splashRing .8s ease-in-out .1s forwards, splashRingOut .4s ease-in .9s forwards; }
+  /* v1.14.1: حلقه دقیقاً همان لحظه‌ای که «سین» کامل ظاهر می‌شود (۱.۳ ثانیه) کاملاً محو می‌شود،
+     و «سین» بعد از آن آرام بزرگ‌تر می‌شود تا تصویر تا پایان splash ثابت و «مکث‌دار» نماند */
   .splash-word { fill:var(--on-bar); opacity:0; transform:scale(.82); transform-origin:150px 150px;
-    animation: splashWord .55s ease-out .75s forwards; }
+    animation: splashWord .55s ease-out .75s forwards, splashDrift 1.2s linear 1.3s forwards; }
   @keyframes splashRing { to { stroke-dashoffset:0; } }
-  @keyframes splashRingFade { to { opacity:.18; } }
+  @keyframes splashRingOut { to { opacity:0; } }
   @keyframes splashWord { to { opacity:1; transform:scale(1); } }
+  @keyframes splashDrift { from { opacity:1; transform:scale(1); } to { opacity:1; transform:scale(1.05); } }
   @media (prefers-reduced-motion: reduce) {
-    .splash-ring { animation:none; stroke-dashoffset:0; opacity:.18; }
+    .splash-ring { animation:none; opacity:0; }
     .splash-word { animation:none; opacity:1; transform:none; }
   }
 
@@ -2192,7 +2195,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.14.0';
+var CURRENT_VERSION = '1.14.1';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
