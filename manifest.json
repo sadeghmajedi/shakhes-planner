@@ -3,7 +3,7 @@
   "short_name": "Daily Tasks",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#FEFAE0",
+  "background_color": "#626654",
   "theme_color": "#626654",
   "icons": [
     {
