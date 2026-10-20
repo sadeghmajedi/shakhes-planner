@@ -214,6 +214,9 @@
   /* ── Group header ── */
   .grp-hdr { display:flex; align-items:center; gap:8px; margin:16px 4px 8px; }
   .grp-hdr:first-child { margin-top:2px; }
+  .grp-hdr.dragover { border-radius:10px; box-shadow:0 0 0 2px var(--gold); background:rgba(212,163,115,.12); }
+  .move-grp-text { font-size:16px; color:var(--dgray); line-height:1.9; margin-top:4px; }
+  .move-grp-text b { color:var(--green); }
   .grp-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0;
     box-shadow: 2px 2px 4px var(--sh1), -1px -1px 3px var(--sh2); }
   .grp-name { font-size:17px; font-weight:700; color:var(--dgray); letter-spacing:.05em; flex:1; }
@@ -827,6 +830,20 @@
     <div id="grpOrderList"></div>
     <div class="mbtns">
       <button class="mbtn-p" id="closeGrpBtn">تأیید</button>
+    </div>
+  </div>
+</div>
+
+<!-- Move-to-another-group Confirmation Modal -->
+<div class="overlay" id="moveGrpOverlay">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">تغییر گروه</div>
+    <div class="confirm-name" id="moveGrpTaskName"></div>
+    <p class="move-grp-text" id="moveGrpText"></p>
+    <div class="mbtns">
+      <button class="mbtn-s" id="moveGrpCancelBtn" style="flex:1">انصراف</button>
+      <button class="mbtn-p" id="moveGrpOkBtn">انتقال</button>
     </div>
   </div>
 </div>
@@ -1542,6 +1559,9 @@ function renderGrouped(taskList,container,showRecurBadgeFor){
   orderedKeys.forEach(nk=>{
     const list=buckets[nk];if(!list||!list.length)return;
     const hdr=document.createElement('div');hdr.className='grp-hdr';
+    /* عنوان گروه هم مقصد drag است: رها کردن روی آن = انتهای همان گروه */
+    hdr.dataset.grpKey=nk;
+    hdr.dataset.grpName=nk==='__none__'?'':(list[0].group||nk).trim();
     if(nk!=='__none__'){
       const originalName=list[0].group||nk;
       const dot=document.createElement('div');dot.className='grp-dot';dot.style.background=groupColor(originalName);hdr.appendChild(dot);
@@ -2066,10 +2086,56 @@ function canDrop(src,dst){
   if(!src||!dst)return false;
   const ss=sectionOf(src),ds=sectionOf(dst);
   if(!ss||!ds||ss!==ds)return false;
-  /* در تب روزانه کارت‌ها داخل باکت گروه رندر می‌شوند؛ رها کردن روی گروه
-     دیگر نتیجه‌ی قابل پیش‌بینی ندارد، پس فقط جابجایی درون‌گروهی مجاز است. */
-  if(tab==='daily'&&!sameGroup(src,dst))return false;
+  /* از v1.15.0 جابجایی بین گروه‌ها هم مجاز است: اگر گروه مقصد فرق کند،
+     قبل از اعمال پنجره‌ی تأیید باز می‌شود و گروه تسک هم عوض می‌شود. */
   return true;
+}
+/* عنوان گروه به‌عنوان مقصد: فقط برای کارهای در انتظارِ تب روزانه (همان لیست گروه‌بندی‌شده) */
+function canDropOnHeader(src){
+  return !!src&&tab==='daily'&&sectionOf(src)==='pending';
+}
+/* اعمال جابجایی: کارت قبل از کارت مقصد، یا (رها روی عنوان) بعد از آخرین کار همان گروه.
+   newGroup رشته‌ی نام گروه مقصد است ('' یعنی بدون گروه). */
+function applyMove(srcId,targetId,hdrKey,newGroup){
+  const st=tasks.find(t=>t.id===srcId);if(!st)return;
+  const changeGroup=normalize(st.group||'')!==normalize(newGroup||'');
+  const fi=tasks.findIndex(t=>t.id===srcId);
+  const[m]=tasks.splice(fi,1);
+  if(changeGroup)m.group=newGroup||'';
+  let ti;
+  if(targetId){
+    ti=tasks.findIndex(t=>t.id===targetId);
+  } else {
+    /* انتهای گروه: بعد از آخرین تسکی از همان گروه که در لیست فعلی دیده می‌شود */
+    let last=-1;
+    tasks.forEach((t,i)=>{
+      const k=normalize(t.group||'')||'__none__';
+      if(k===hdrKey&&sectionOf(t)==='pending')last=i;
+    });
+    ti=last+1;
+  }
+  if(ti<0)ti=tasks.length;
+  tasks.splice(ti,0,m);
+  save();render();
+}
+let pendingMove=null;
+function askMoveGroup(srcId,targetId,hdrKey,newGroup){
+  const st=tasks.find(t=>t.id===srcId);if(!st)return;
+  pendingMove={srcId,targetId,hdrKey,newGroup};
+  const from=(st.group||'').trim()||'بدون گروه';
+  const to=(newGroup||'').trim()||'بدون گروه';
+  document.getElementById('moveGrpTaskName').textContent=st.title;
+  document.getElementById('moveGrpText').innerHTML=
+    'از گروه <b>'+escHtml(from)+'</b> به گروه <b>'+escHtml(to)+'</b> منتقل شود؟';
+  document.getElementById('moveGrpOverlay').classList.add('open');
+}
+function closeMoveGroup(){
+  pendingMove=null;
+  document.getElementById('moveGrpOverlay').classList.remove('open');
+}
+function confirmMoveGroup(){
+  const pm=pendingMove;closeMoveGroup();
+  if(pm)applyMove(pm.srcId,pm.targetId,pm.hdrKey,pm.newGroup);
 }
 function initDrag(){
   document.querySelectorAll('.dhandle').forEach(h=>{
@@ -2083,36 +2149,71 @@ function dragStart(e){
   const cx=e.touches?e.touches[0].clientX:e.clientX;const cy=e.touches?e.touches[0].clientY:e.clientY;
   ghost.style.cssText=`position:fixed;z-index:9999;pointer-events:none;width:${card.offsetWidth}px;opacity:.85;transform:scale(1.02);box-shadow:8px 8px 20px #CFC8A3,-4px -4px 12px #fff;left:${cx-(cx-rect.left)}px;top:${cy-(cy-rect.top)}px;`;
   document.body.appendChild(ghost);card.classList.add('dragging');
-  drag={id,ghost,ox:cx-rect.left,oy:cy-rect.top,lastOver:null};
+  drag={id,ghost,ox:cx-rect.left,oy:cy-rect.top,lastOver:null,lastHdr:null,cx,cy,raf:0};
+  drag.raf=requestAnimationFrame(dragAutoScroll);
   if(e.touches){document.addEventListener('touchmove',dragMove,{passive:false});document.addEventListener('touchend',dragEnd);}
   else{document.addEventListener('mousemove',dragMove);document.addEventListener('mouseup',dragEnd);}
 }
 function dragMove(e){
   if(!drag)return;e.preventDefault();
   const cx=e.touches?e.touches[0].clientX:e.clientX;const cy=e.touches?e.touches[0].clientY:e.clientY;
+  drag.cx=cx;drag.cy=cy;
   drag.ghost.style.left=(cx-drag.ox)+'px';drag.ghost.style.top=(cy-drag.oy)+'px';
-  drag.ghost.style.display='none';const el=document.elementFromPoint(cx,cy);drag.ghost.style.display='';
+  dragUpdateHover();
+}
+/* هایلایت مقصد زیر انگشت (کارت یا عنوان گروه) — بعد از اسکرول خودکار هم صدا زده می‌شود */
+function dragUpdateHover(){
+  if(!drag)return;
+  drag.ghost.style.display='none';const el=document.elementFromPoint(drag.cx,drag.cy);drag.ghost.style.display='';
+  const st=tasks.find(t=>t.id===drag.id);
   const oc=el?.closest('.card');const oid=oc?.dataset.id;
-  if(drag.lastOver&&drag.lastOver!==oid)document.querySelector(`.card[data-id="${drag.lastOver}"]`)?.classList.remove('dragover');
+  if(drag.lastOver&&drag.lastOver!==oid){document.querySelector(`.card[data-id="${drag.lastOver}"]`)?.classList.remove('dragover');drag.lastOver=null;}
   if(oid&&oid!==drag.id){
-    const ot=tasks.find(t=>t.id===oid);const st=tasks.find(t=>t.id===drag.id);
+    const ot=tasks.find(t=>t.id===oid);
     if(canDrop(st,ot)){oc.classList.add('dragover');drag.lastOver=oid;}
   }
+  const hd=oc?null:el?.closest('.grp-hdr');
+  if(drag.lastHdr&&drag.lastHdr!==hd){drag.lastHdr.classList.remove('dragover');drag.lastHdr=null;}
+  if(hd&&canDropOnHeader(st)){hd.classList.add('dragover');drag.lastHdr=hd;}
+}
+/* اسکرول خودکار: وقتی کارت نزدیک لبه‌ی بالا/پایین ناحیه‌ی اسکرول است، صفحه
+   هم‌جهت حرکت می‌کند (هرچه نزدیک‌تر، سریع‌تر)، حتی اگر انگشت ثابت بماند. */
+function dragAutoScroll(){
+  if(!drag)return;
+  const sw=document.getElementById('scrollWrap');const r=sw.getBoundingClientRect();
+  const EDGE=70,MAX=14;let dy=0;
+  if(drag.cy<r.top+EDGE)dy=-Math.ceil(MAX*Math.min(1,(r.top+EDGE-drag.cy)/EDGE));
+  else if(drag.cy>r.bottom-EDGE)dy=Math.ceil(MAX*Math.min(1,(drag.cy-(r.bottom-EDGE))/EDGE));
+  if(dy){const before=sw.scrollTop;sw.scrollTop+=dy;if(sw.scrollTop!==before)dragUpdateHover();}
+  drag.raf=requestAnimationFrame(dragAutoScroll);
 }
 function dragEnd(e){
   if(!drag)return;
   const cx=e.changedTouches?e.changedTouches[0].clientX:e.clientX;const cy=e.changedTouches?e.changedTouches[0].clientY:e.clientY;
+  cancelAnimationFrame(drag.raf);
   drag.ghost.style.display='none';const el=document.elementFromPoint(cx,cy);drag.ghost.style.display='';
+  const st=tasks.find(t=>t.id===drag.id);
   const oc=el?.closest('.card');const tid=oc?.dataset.id;
+  const hd=oc?null:el?.closest('.grp-hdr');
+  let move=null;
   if(tid&&tid!==drag.id){
-    const ot=tasks.find(t=>t.id===tid);const st=tasks.find(t=>t.id===drag.id);
-    if(canDrop(st,ot)){const fi=tasks.findIndex(t=>t.id===drag.id);const ti=tasks.findIndex(t=>t.id===tid);const[m]=tasks.splice(fi,1);tasks.splice(ti,0,m);save();}
+    const ot=tasks.find(t=>t.id===tid);
+    if(canDrop(st,ot)){
+      /* در تب روزانه کارت‌ها گروه‌بندی‌شده‌اند؛ رها روی کارتِ گروه دیگر یعنی تغییر گروه */
+      const ng=tab==='daily'?(ot.group||'').trim():(st.group||'');
+      move={srcId:drag.id,targetId:tid,hdrKey:null,newGroup:ng};
+    }
+  } else if(hd&&canDropOnHeader(st)){
+    move={srcId:drag.id,targetId:null,hdrKey:hd.dataset.grpKey,newGroup:hd.dataset.grpName||''};
   }
   drag.ghost.remove();
+  document.querySelectorAll('.grp-hdr.dragover').forEach(h=>h.classList.remove('dragover'));
   document.querySelectorAll('.card').forEach(c=>c.classList.remove('dragging','dragover'));
   drag=null;
   document.removeEventListener('mousemove',dragMove);document.removeEventListener('mouseup',dragEnd);
   document.removeEventListener('touchmove',dragMove);document.removeEventListener('touchend',dragEnd);
+  if(move&&normalize(st.group||'')!==normalize(move.newGroup||'')){render();askMoveGroup(move.srcId,move.targetId,move.hdrKey,move.newGroup);return;}
+  if(move){applyMove(move.srcId,move.targetId,move.hdrKey,move.newGroup);return;}
   render();
 }
 
@@ -2195,7 +2296,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.14.1';
+var CURRENT_VERSION = '1.15.0';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -2379,6 +2480,9 @@ document.getElementById('fgroup').addEventListener('input',function(){showGrpDro
 document.getElementById('fgroup').addEventListener('blur',function(){setTimeout(hideGrpDropdown,200);});
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('confirmDelBtn').addEventListener('click',confirmDelete);
+document.getElementById('moveGrpOkBtn').addEventListener('click',confirmMoveGroup);
+document.getElementById('moveGrpCancelBtn').addEventListener('click',closeMoveGroup);
+document.getElementById('moveGrpOverlay').addEventListener('click',function(e){if(e.target===this)closeMoveGroup();});
 document.getElementById('confirmCancelBtn').addEventListener('click',closeConfirm);
 document.getElementById('confirmOverlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
 document.getElementById('closeGrpBtn').addEventListener('click',closeGrpOrder);
