@@ -501,6 +501,41 @@
   .grp-order-handle span { display:block; width:14px; height:2px; background:var(--green); border-radius:1px; }
   .hint { font-size:18px; color:var(--lgray); padding:4px 4px 10px; }
 
+  /* v1.16.0: ترتیب زمانی گروه‌ها (برنامه‌ها و بازه‌ها) */
+  .sched-ind { font-size:12px; color:rgba(254,250,224,.78); text-align:center; margin-top:8px; line-height:1.4; }
+  .sched-ind:empty { display:none; }
+  .sched-status { font-size:14px; color:var(--dgray); line-height:1.7; background:rgba(212,163,115,.14);
+    border-radius:var(--rs); padding:8px 12px; margin-bottom:8px; }
+  .sched-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid rgba(0,0,0,.06); }
+  .sched-row-body { flex:1; min-width:0; cursor:pointer; }
+  .sched-row-name { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:17px; font-weight:700; color:var(--green); word-break:break-word; }
+  .sched-row-sub { font-size:13px; color:var(--lgray); margin-top:2px; }
+  .sched-today { font-size:12px; font-weight:700; color:var(--gold-d); background:rgba(212,163,115,.2);
+    border-radius:8px; padding:1px 7px; }
+  .sched-empty { font-size:14px; color:var(--lgray); padding:4px 2px 8px; }
+  #schedAddBtn { margin:10px 0 2px; }
+  .sched-base-title { font-size:15px; font-weight:700; color:var(--dgray); margin-top:16px; }
+  #grpOrderList.locked { opacity:.6; }
+  #grpOrderList.locked .grp-order-handle { opacity:.12; pointer-events:none; }
+  .hint.lock-note { font-size:14px; color:var(--gold-d); line-height:1.7; }
+  .sched-slot { background:var(--sage-l); border-radius:var(--rs); padding:10px 10px 8px; margin-bottom:10px;
+    box-shadow:3px 3px 8px var(--sh1), -2px -2px 6px var(--sh2); }
+  .sched-slot-times { display:flex; align-items:center; gap:6px; }
+  .sched-slot-times > span { font-size:15px; color:var(--dgray); flex-shrink:0; }
+  .field .sched-slot-times input { flex:1; min-width:0; padding:8px; font-size:16px; text-align:center; }
+  .sched-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .sched-chip { display:inline-flex; align-items:center; gap:6px; border:none; border-radius:99px; padding:6px 11px;
+    font-size:14px; font-weight:600; font-family:'Vazirmatn',sans-serif; color:var(--dgray); background:var(--bg);
+    cursor:pointer; box-shadow:2px 2px 5px var(--sh1), -1px -1px 4px var(--sh2); }
+  .sched-chip.on { color:var(--green); background:linear-gradient(145deg,#DDB287,#C99460); }
+  .sched-chip.stale { opacity:.55; }
+  .chip-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .sched-num { min-width:18px; height:18px; border-radius:9px; padding:0 4px; font-size:11px; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center; background:var(--green); color:var(--bg); }
+  .sched-err { font-size:13px; color:#c0392b; margin-top:4px; line-height:1.6; }
+  .sched-err:empty { display:none; }
+  .day-btn:disabled { opacity:.3; cursor:not-allowed; }
+
   /* backup modal */
   .bk-section { margin-bottom:20px; }
   .bk-section:last-child { margin-bottom:0; }
@@ -664,6 +699,8 @@
     <button class="tab active" id="tab-daily">روزانه</button>
     <button class="tab" id="tab-recurring">دوره‌ای</button>
   </div>
+  <!-- v1.16.0: برنامه‌ی زمانی فعال ترتیب گروه‌ها (خالی = پنهان) -->
+  <div class="sched-ind" id="schedInd"></div>
 </div>
 
 </div><!-- end top-fixed -->
@@ -826,10 +863,64 @@
   <div class="modal">
     <div class="mhandle"></div>
     <div class="mtitle">ترتیب گروه‌ها</div>
-    <p class="hint">برای جابجایی بکشید</p>
+    <!-- v1.16.0: ترتیب دستی یا بر اساس برنامه‌ی زمانی -->
+    <div class="ttype" id="grpModeSel">
+      <button type="button" class="tbtn" data-mode="manual">ترتیب دستی</button>
+      <button type="button" class="tbtn" data-mode="schedule">برنامه زمانی</button>
+    </div>
+    <div id="schedSection" style="display:none;">
+      <p class="sched-status" id="schedStatus"></p>
+      <div id="schedList"></div>
+      <button type="button" class="sub-editor-add" id="schedAddBtn">+ برنامه جدید</button>
+      <div class="sched-base-title">ترتیب پایه</div>
+      <p class="opt-desc">گروه‌هایی که در بازه‌ی فعال نیستند، و همه‌ی گروه‌ها در ساعت‌های بدون بازه، به این ترتیب می‌آیند.</p>
+    </div>
+    <p class="hint" id="grpOrderHint">برای جابجایی بکشید</p>
     <div id="grpOrderList"></div>
     <div class="mbtns">
       <button class="mbtn-p" id="closeGrpBtn">تأیید</button>
+    </div>
+  </div>
+</div>
+
+<!-- v1.16.0: ویرایش برنامه‌ی زمانی ترتیب گروه‌ها -->
+<div class="overlay" id="schedOverlay">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="schedEdTitle">برنامه جدید</div>
+    <div class="field">
+      <label for="schedName">نام برنامه</label>
+      <input type="text" id="schedName" placeholder="مثلاً روزهای عادی" autocomplete="off"/>
+      <p class="sched-err" id="schedNameErr"></p>
+    </div>
+    <div class="field">
+      <label>روزهای هفته</label>
+      <div class="day-pick" id="schedDayPick">
+        <button type="button" class="day-btn" data-d="6">ش</button>
+        <button type="button" class="day-btn" data-d="0">ی</button>
+        <button type="button" class="day-btn" data-d="1">د</button>
+        <button type="button" class="day-btn" data-d="2">س</button>
+        <button type="button" class="day-btn" data-d="3">چ</button>
+        <button type="button" class="day-btn" data-d="4">پ</button>
+        <button type="button" class="day-btn" data-d="5">ج</button>
+      </div>
+      <div class="day-presets">
+        <button type="button" class="day-preset" id="schedDayAll">هر روز</button>
+        <button type="button" class="day-preset" id="schedDayWork">روزهای کاری (شنبه تا پنجشنبه)</button>
+      </div>
+      <p class="opt-desc" id="schedDaysTaken"></p>
+      <p class="sched-err" id="schedDaysErr"></p>
+    </div>
+    <div class="field">
+      <label>بازه‌های زمانی</label>
+      <p class="opt-desc" style="margin-bottom:8px;">در هر بازه، گروه‌ها را به ترتیب اولویت لمس کنید؛ بقیه‌ی گروه‌ها به ترتیب پایه می‌آیند. پایان ۰۰:۰۰ یعنی تا نیمه‌شب.</p>
+      <div id="schedSlots"></div>
+      <button type="button" class="sub-editor-add" id="schedSlotAdd">+ بازه جدید</button>
+      <p class="sched-err" id="schedSlotsErr"></p>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn-s" id="schedCancelBtn">لغو</button>
+      <button class="mbtn-p" id="schedSaveBtn">ذخیره</button>
     </div>
   </div>
 </div>
@@ -913,7 +1004,7 @@
         <button class="bk-btn bk-btn-ghost" id="bkRestoreBtn">بازگردانی</button>
       </div>
       <input type="file" id="bkFileInput" accept="application/json,.json" style="display:none">
-      <p class="bk-sub" style="margin-top:8px;">فایل JSON شامل همه‌ی تسک‌ها و ترتیب گروه‌ها</p>
+      <p class="bk-sub" style="margin-top:8px;">فایل JSON شامل تسک‌ها، ترتیب و برنامه‌های گروه‌ها</p>
       <div class="bk-status" id="bkSaveStatus"></div>
       <div class="bk-status" id="bkRestoreStatus"></div>
     </div>
@@ -1062,6 +1153,71 @@ function allGroupNames(){
   const order=loadGrpOrder();
   const normalizedOrder=order.map(g=>normalize(g));
   return[...normalizedOrder.filter(n=>seen.has(n)).map(n=>seen.get(n)),...[...seen.values()].filter(g=>!normalizedOrder.includes(normalize(g)))];
+}
+
+/* ── ترتیب زمانی گروه‌ها (v1.16.0) ──
+   shakhes_grp_schedules: [{id,name,days:[getDay()],slots:[{start:'HH:MM',end:'HH:MM',top:[نام گروه]}]}]
+   shakhes_grp_order_mode: 'manual' | 'schedule'
+   برنامه‌ی امروز خودکار از روی روز هفته انتخاب می‌شود (هر روز فقط مال یک برنامه).
+   در بازه‌ی فعال: اول گروه‌های top (فقط موجودها)، بعد بقیه به ترتیب دستی.
+   ترتیب دستی (shakhes_grp_order) پایه است و هرگز بازنویسی نمی‌شود. */
+function loadSchedules(){
+  try{const a=JSON.parse(localStorage.getItem('shakhes_grp_schedules'));return Array.isArray(a)?a.filter(s=>s&&typeof s==='object'):[];}catch(e){return[];}
+}
+function saveSchedules(a){localStorage.setItem('shakhes_grp_schedules',JSON.stringify(a));}
+function getOrderMode(){return localStorage.getItem('shakhes_grp_order_mode')==='schedule'?'schedule':'manual';}
+function setOrderMode(m){localStorage.setItem('shakhes_grp_order_mode',m==='schedule'?'schedule':'manual');}
+/* 'HH:MM' → دقیقه از نیمه‌شب؛ پایان '00:00' یعنی نیمه‌شبِ آخر روز (۱۴۴۰). */
+function hmToMin(s,isEnd){
+  const m=/^(\d{1,2}):(\d{2})$/.exec(String(s||''));if(!m)return null;
+  const h=Number(m[1]),mi=Number(m[2]);if(h>23||mi>59)return null;
+  const v=h*60+mi;return(isEnd&&v===0)?1440:v;
+}
+function minToHm(v){v=Math.max(0,Math.min(1440,v))%1440;return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0');}
+function fmtHM(s,isEnd){
+  const v=hmToMin(s,isEnd);if(v==null)return'';
+  if(v===1440)return fp(24);
+  const h=Math.floor(v/60),mi=v%60;
+  return fp(h)+(mi?':'+fp(String(mi).padStart(2,'0')):'');
+}
+function schedDaysLabel(days){
+  const set=new Set(days||[]);
+  if(set.size===7)return'هر روز';
+  if(set.size===WORKDAYS.length&&WORKDAYS.every(d=>set.has(d)))return'شنبه تا پنجشنبه';
+  return WEEK_ORDER.filter(d=>set.has(d)).map(d=>DAY_SHORT[d]).join('، ');
+}
+/* برنامه و بازه‌ی فعال در این لحظه؛ در حالت دستی یا نبودِ برنامه‌ی امروز هر دو null */
+function getOrderState(now){
+  now=now||new Date();
+  if(getOrderMode()!=='schedule')return{sch:null,slot:null};
+  const d=now.getDay();
+  const sch=loadSchedules().find(s=>Array.isArray(s.days)&&s.days.includes(d))||null;
+  if(!sch)return{sch:null,slot:null};
+  const cur=now.getHours()*60+now.getMinutes();
+  const slot=(sch.slots||[]).find(sl=>{
+    const a=hmToMin(sl.start),b=hmToMin(sl.end,true);
+    return a!=null&&b!=null&&cur>=a&&cur<b;
+  })||null;
+  return{sch,slot};
+}
+/* ترتیب نمایش گروه‌ها در تب روزانه (ترتیب دستی + اولویت‌های بازه‌ی فعال) */
+function displayGroupNames(){
+  const base=allGroupNames();
+  const st=getOrderState();
+  if(!st.slot||!Array.isArray(st.slot.top))return base;
+  const top=[],used=new Set();
+  st.slot.top.forEach(n=>{
+    const k=normalize(n);if(!k||used.has(k))return;
+    const g=base.find(x=>normalize(x)===k);
+    if(g){top.push(g);used.add(k);}
+  });
+  return[...top,...base.filter(g=>!used.has(normalize(g)))];
+}
+function updateSchedInd(){
+  const el=document.getElementById('schedInd');if(!el)return;
+  const st=getOrderState();
+  if(!st.sch){el.textContent='';return;}
+  el.textContent='برنامه: '+(st.sch.name||'')+(st.slot?' · '+fmtHM(st.slot.start)+' تا '+fmtHM(st.slot.end,true):'');
 }
 function groupColor(name){
   if(!name)return'transparent';
@@ -1348,6 +1504,7 @@ function renderTrendChart(days){
 function render(){
   autoReset();updateProgress();
   document.getElementById('hdrDate').textContent=getDateLine();
+  updateSchedInd();
   tab==='daily'?renderDaily():renderRecurring();
   initDrag();
 }
@@ -1546,7 +1703,7 @@ function renderSubDisplay(t){
 }
 
 function renderGrouped(taskList,container,showRecurBadgeFor){
-  const grpOrder=allGroupNames();
+  const grpOrder=displayGroupNames();
   const buckets={};
   grpOrder.forEach(g=>{buckets[normalize(g)]=[];});
   buckets['__none__']=[];
@@ -2006,10 +2163,198 @@ function toggleSubtask(taskId,subId){
   save();render();
 }
 
-function openGrpOrder(){renderGrpOrderList();document.getElementById('grpOverlay').classList.add('open');}
+function openGrpOrder(){renderGrpModal();document.getElementById('grpOverlay').classList.add('open');}
 function closeGrpOrder(){document.getElementById('grpOverlay').classList.remove('open');render();}
+/* v1.16.0: پنجره‌ی ترتیب گروه‌ها — انتخاب حالت، فهرست برنامه‌ها، و ترتیب پایه (دستی) */
+function renderGrpModal(){
+  const mode=getOrderMode();
+  document.querySelectorAll('#grpModeSel .tbtn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  document.getElementById('schedSection').style.display=mode==='schedule'?'block':'none';
+  if(mode==='schedule')renderSchedList();
+  renderGrpOrderList();
+}
+function renderSchedList(){
+  const st=getOrderState();
+  const status=document.getElementById('schedStatus');
+  if(st.slot)status.textContent='الان: «'+st.sch.name+'» · بازه‌ی '+fmtHM(st.slot.start)+' تا '+fmtHM(st.slot.end,true);
+  else if(st.sch)status.textContent='امروز: «'+st.sch.name+'» · الان بازه‌ای فعال نیست و ترتیب پایه نمایش داده می‌شود';
+  else status.textContent='امروز برنامه‌ای ندارد؛ ترتیب پایه نمایش داده می‌شود';
+  const list=document.getElementById('schedList');list.innerHTML='';
+  const all=loadSchedules();
+  if(!all.length){list.innerHTML='<p class="sched-empty">هنوز برنامه‌ای ثبت نشده</p>';return;}
+  all.forEach(s=>{
+    const row=document.createElement('div');row.className='sched-row';
+    const body=document.createElement('div');body.className='sched-row-body';
+    const isToday=st.sch&&st.sch.id===s.id;
+    const n=(s.slots||[]).length;
+    body.innerHTML='<div class="sched-row-name"><span>'+escHtml(s.name||'')+'</span>'+(isToday?'<span class="sched-today">امروز</span>':'')+'</div>'+
+      '<div class="sched-row-sub">'+escHtml(schedDaysLabel(s.days))+' · '+fp(n)+' بازه</div>';
+    body.addEventListener('click',()=>openSchedEditor(s.id));
+    const ed=document.createElement('button');ed.type='button';ed.className='ibtn';ed.setAttribute('aria-label','ویرایش');
+    ed.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="var(--dgray)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+    ed.addEventListener('click',()=>openSchedEditor(s.id));
+    const del=document.createElement('button');del.type='button';del.className='ibtn';del.setAttribute('aria-label','حذف');
+    del.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
+    del.addEventListener('click',()=>{
+      if(!confirm('برنامه‌ی «'+(s.name||'')+'» حذف شود؟'))return;
+      saveSchedules(loadSchedules().filter(x=>x.id!==s.id));
+      renderGrpModal();render();
+    });
+    row.appendChild(body);row.appendChild(ed);row.appendChild(del);list.appendChild(row);
+  });
+}
+
+/* ویرایشگر برنامه */
+let schedEd=null;
+function openSchedEditor(id){
+  const src=id?loadSchedules().find(s=>s.id===id):null;
+  schedEd={
+    id:src?src.id:null,
+    name:src?(src.name||''):'',
+    days:new Set(src&&Array.isArray(src.days)?src.days:[]),
+    slots:src&&Array.isArray(src.slots)?src.slots.map(sl=>({start:sl.start||'',end:sl.end||'',top:Array.isArray(sl.top)?sl.top.slice():[],err:''})):[]
+  };
+  if(!schedEd.slots.length)schedEd.slots.push(newSlot());
+  /* روزهایی که در برنامه‌ی دیگری هستند قابل انتخاب نیستند (اگر از قبل در این برنامه بوده‌اند، برداشته می‌شوند) */
+  const taken=takenDays();
+  taken.forEach((_,d)=>schedEd.days.delete(d));
+  document.getElementById('schedEdTitle').textContent=src?'ویرایش برنامه':'برنامه جدید';
+  document.getElementById('schedName').value=schedEd.name;
+  ['schedNameErr','schedDaysErr','schedSlotsErr'].forEach(i=>document.getElementById(i).textContent='');
+  renderSchedDays();renderSchedSlots();
+  document.getElementById('grpOverlay').classList.remove('open');
+  document.getElementById('schedOverlay').classList.add('open');
+}
+function closeSchedEditor(){
+  document.getElementById('schedOverlay').classList.remove('open');
+  schedEd=null;
+  renderGrpModal();
+  document.getElementById('grpOverlay').classList.add('open');
+}
+/* Map روز → نام برنامه‌ی دیگری که آن روز را گرفته */
+function takenDays(){
+  const m=new Map();
+  loadSchedules().forEach(s=>{
+    if(schedEd&&s.id===schedEd.id)return;
+    (s.days||[]).forEach(d=>{if(!m.has(d))m.set(d,s.name||'');});
+  });
+  return m;
+}
+function renderSchedDays(){
+  const taken=takenDays();
+  document.querySelectorAll('#schedDayPick .day-btn').forEach(b=>{
+    const d=Number(b.dataset.d);
+    b.disabled=taken.has(d);
+    b.classList.toggle('on',schedEd.days.has(d));
+  });
+  /* روزهای گرفته‌شده به تفکیک برنامه: «ش، ی… در برنامه‌ی «روزهای عادی»» */
+  const byName=new Map();
+  WEEK_ORDER.filter(d=>taken.has(d)).forEach(d=>{const n=taken.get(d);if(!byName.has(n))byName.set(n,[]);byName.get(n).push(d);});
+  const parts=[...byName].map(([n,ds])=>schedDaysLabel(ds)+' در «'+n+'»');
+  document.getElementById('schedDaysTaken').textContent=parts.length?'روزهای کم‌رنگ مال برنامه‌ی دیگری است: '+parts.join('؛ '):'';
+}
+function setSchedDays(list){
+  const taken=takenDays();
+  schedEd.days=new Set(list.filter(d=>!taken.has(d)));
+  document.getElementById('schedDaysErr').textContent='';
+  renderSchedDays();
+}
+function newSlot(){
+  let start=8*60;
+  const last=schedEd&&schedEd.slots.length?schedEd.slots[schedEd.slots.length-1]:null;
+  if(last){const e=hmToMin(last.end,true);if(e!=null&&e<1440)start=e;}
+  const end=Math.min(start+120,1440);
+  return{start:minToHm(start),end:minToHm(end),top:[],err:''};
+}
+function renderSchedSlots(){
+  const wrap=document.getElementById('schedSlots');wrap.innerHTML='';
+  const groups=allGroupNames();
+  schedEd.slots.forEach((sl,i)=>{
+    const box=document.createElement('div');box.className='sched-slot';
+    const times=document.createElement('div');times.className='sched-slot-times';
+    const mk=(lbl,key)=>{
+      const sp=document.createElement('span');sp.textContent=lbl;times.appendChild(sp);
+      const inp=document.createElement('input');inp.type='time';inp.dir='ltr';inp.value=sl[key]||'';
+      inp.addEventListener('change',()=>{sl[key]=inp.value;sl.err='';const e=box.querySelector('.sched-err');if(e)e.textContent='';});
+      times.appendChild(inp);
+    };
+    mk('از','start');mk('تا','end');
+    const del=document.createElement('button');del.type='button';del.className='sub-editor-del';del.setAttribute('aria-label','حذف بازه');
+    del.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    del.addEventListener('click',()=>{schedEd.slots.splice(i,1);renderSchedSlots();});
+    times.appendChild(del);
+    box.appendChild(times);
+    /* چیپ‌ها: گروه‌های موجود + گروه‌هایی که قبلاً انتخاب شده ولی الان کاری ندارند (کم‌رنگ، حفظ می‌شوند) */
+    const chipNames=groups.slice();
+    sl.top.forEach(n=>{if(!chipNames.some(g=>normalize(g)===normalize(n)))chipNames.push(n);});
+    const chips=document.createElement('div');chips.className='sched-chips';
+    if(!chipNames.length){chips.innerHTML='<span class="opt-desc">هنوز گروهی ساخته نشده</span>';}
+    chipNames.forEach(g=>{
+      const idx=sl.top.findIndex(n=>normalize(n)===normalize(g));
+      const stale=!groups.some(x=>normalize(x)===normalize(g));
+      const c=document.createElement('button');c.type='button';
+      c.className='sched-chip'+(idx>=0?' on':'')+(stale?' stale':'');
+      c.innerHTML=(idx>=0?'<span class="sched-num">'+fp(idx+1)+'</span>':'<span class="chip-dot" style="background:'+groupColor(g)+'"></span>')+escHtml(g);
+      c.addEventListener('click',()=>{
+        if(idx>=0)sl.top.splice(idx,1);else sl.top.push(g);
+        sl.err='';renderSchedSlots();
+      });
+      chips.appendChild(c);
+    });
+    box.appendChild(chips);
+    const err=document.createElement('p');err.className='sched-err';err.textContent=sl.err||'';box.appendChild(err);
+    wrap.appendChild(box);
+  });
+}
+function saveSchedEditor(){
+  const name=document.getElementById('schedName').value.trim();
+  let ok=true;
+  document.getElementById('schedNameErr').textContent=name?'':'نام برنامه را بنویسید';
+  if(!name)ok=false;
+  const taken=takenDays();
+  const days=[...schedEd.days].filter(d=>!taken.has(d)).sort((a,b)=>a-b);
+  document.getElementById('schedDaysErr').textContent=days.length?'':'حداقل یک روز را انتخاب کنید';
+  if(!days.length)ok=false;
+  document.getElementById('schedSlotsErr').textContent=schedEd.slots.length?'':'حداقل یک بازه اضافه کنید';
+  if(!schedEd.slots.length)ok=false;
+  schedEd.slots.forEach(sl=>{
+    sl.err='';
+    const a=hmToMin(sl.start),b=hmToMin(sl.end,true);
+    if(a==null||b==null)sl.err='ساعت شروع و پایان را وارد کنید';
+    else if(a>=b)sl.err='ساعت پایان باید بعد از شروع باشد (بازه نمی‌تواند از نیمه‌شب رد شود)';
+    else if(!sl.top.length)sl.err='حداقل یک گروه را انتخاب کنید';
+  });
+  /* هم‌پوشانی: بازه‌های معتبر را بر اساس شروع مرتب کن و هر کدام را با بعدی مقایسه کن */
+  const valid=schedEd.slots.filter(sl=>!sl.err).map(sl=>({sl,a:hmToMin(sl.start),b:hmToMin(sl.end,true)})).sort((x,y)=>x.a-y.a);
+  for(let i=0;i<valid.length-1;i++){
+    if(valid[i].b>valid[i+1].a){
+      const msg='با بازه‌ی '+fmtHM(valid[i].sl.start)+' تا '+fmtHM(valid[i].sl.end,true)+' هم‌پوشانی دارد';
+      valid[i+1].sl.err=msg;
+    }
+  }
+  if(schedEd.slots.some(sl=>sl.err))ok=false;
+  if(!ok){renderSchedSlots();return;}
+  const slots=schedEd.slots
+    .map(sl=>({start:sl.start,end:sl.end,top:sl.top.slice()}))
+    .sort((x,y)=>hmToMin(x.start)-hmToMin(y.start));
+  const all=loadSchedules();
+  const obj={id:schedEd.id||('s'+Date.now().toString(36)),name,days,slots};
+  const i=all.findIndex(s=>s.id===obj.id);
+  if(i>=0)all[i]=obj;else all.push(obj);
+  saveSchedules(all);
+  closeSchedEditor();
+  render();
+}
+
 function renderGrpOrderList(){
   const el=document.getElementById('grpOrderList');el.innerHTML='';
+  /* در بازه‌ی فعالِ برنامه، جابجایی دستی قفل است تا با ترتیب نمایش‌داده‌شده قاطی نشود */
+  const st=getOrderState();
+  const locked=!!st.slot;
+  el.classList.toggle('locked',locked);
+  const hint=document.getElementById('grpOrderHint');
+  hint.textContent=locked?'ترتیب الان طبق برنامه‌ی «'+st.sch.name+'» است؛ ترتیب پایه بعد از پایان بازه یا در حالت «ترتیب دستی» قابل جابجایی است.':'برای جابجایی بکشید';
+  hint.classList.toggle('lock-note',locked);
   allGroupNames().forEach(g=>{
     const row=document.createElement('div');row.className='grp-order-item';row.dataset.grp=g;
     row.innerHTML=`<div class="grp-order-handle"><span></span><span></span><span></span></div>
@@ -2027,7 +2372,9 @@ function initGrpDrag(){
   });
 }
 function grpDragStart(e){
-  e.preventDefault();const row=e.currentTarget.closest('.grp-order-item');if(!row)return;
+  e.preventDefault();
+  if(document.getElementById('grpOrderList').classList.contains('locked'))return;
+  const row=e.currentTarget.closest('.grp-order-item');if(!row)return;
   const ghost=row.cloneNode(true);const rect=row.getBoundingClientRect();
   const cx=e.touches?e.touches[0].clientX:e.clientX;const cy=e.touches?e.touches[0].clientY:e.clientY;
   ghost.style.cssText=`position:fixed;z-index:9999;pointer-events:none;width:${row.offsetWidth}px;opacity:.9;background:var(--bg);border-radius:12px;box-shadow:5px 5px 14px #DDD7B6,-3px -3px 10px #fff;left:${rect.left}px;top:${cy-(cy-rect.top)}px;padding:11px 0;`;
@@ -2221,12 +2568,15 @@ function dragEnd(e){
 function buildBackupObject(){
   return {
     app: 'shakhes-planner',
-    backupVersion: 1,
+    backupVersion: 2,
     exportedAt: new Date().toISOString(),
     exportedAtShamsi: getDateLine(),
     data: {
       shakhes_tasks: localStorage.getItem('shakhes_tasks') || '[]',
-      shakhes_grp_order: localStorage.getItem('shakhes_grp_order') || '[]'
+      shakhes_grp_order: localStorage.getItem('shakhes_grp_order') || '[]',
+      /* v1.16.0 (backupVersion 2): برنامه‌های زمانی و حالت ترتیب گروه‌ها */
+      shakhes_grp_schedules: localStorage.getItem('shakhes_grp_schedules') || '[]',
+      shakhes_grp_order_mode: getOrderMode()
     }
   };
 }
@@ -2278,6 +2628,12 @@ function restoreFromFile(file){
       if(!confirm('با بازگردانی، تمام داده‌های فعلی حذف و با محتوای فایل جایگزین می‌شود. ادامه می‌دهید؟'))return;
       localStorage.setItem('shakhes_tasks',payload.shakhes_tasks);
       if(payload.shakhes_grp_order) localStorage.setItem('shakhes_grp_order',payload.shakhes_grp_order);
+      /* فایل‌های قدیمی (backupVersion 1) این دو کلید را ندارند: برنامه‌های فعلی دست نمی‌خورند و حالت دستی می‌شود */
+      let schedOk=false;
+      if(typeof payload.shakhes_grp_schedules==='string'){
+        try{if(Array.isArray(JSON.parse(payload.shakhes_grp_schedules))){localStorage.setItem('shakhes_grp_schedules',payload.shakhes_grp_schedules);schedOk=true;}}catch(_){}
+      }
+      setOrderMode(schedOk&&payload.shakhes_grp_order_mode==='schedule'?'schedule':'manual');
       showBkStatus('bkRestoreStatus','✓ بازگردانی شد. در حال بارگذاری مجدد...',true);
       setTimeout(function(){window.location.reload();},1000);
     }catch(err){showBkStatus('bkRestoreStatus','خطا در خواندن فایل',false);}
@@ -2296,7 +2652,7 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.15.0';
+var CURRENT_VERSION = '1.16.0';
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -2487,6 +2843,29 @@ document.getElementById('confirmCancelBtn').addEventListener('click',closeConfir
 document.getElementById('confirmOverlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
 document.getElementById('closeGrpBtn').addEventListener('click',closeGrpOrder);
 document.getElementById('grpOverlay').addEventListener('click',function(e){if(e.target===this)closeGrpOrder();});
+/* v1.16.0: حالت ترتیب و ویرایشگر برنامه‌ها */
+document.querySelectorAll('#grpModeSel .tbtn').forEach(function(b){
+  b.addEventListener('click',function(){setOrderMode(b.dataset.mode);renderGrpModal();render();});
+});
+document.getElementById('schedAddBtn').addEventListener('click',function(){openSchedEditor(null);});
+document.getElementById('schedCancelBtn').addEventListener('click',closeSchedEditor);
+document.getElementById('schedOverlay').addEventListener('click',function(e){if(e.target===this)closeSchedEditor();});
+document.getElementById('schedSaveBtn').addEventListener('click',saveSchedEditor);
+document.getElementById('schedSlotAdd').addEventListener('click',function(){
+  schedEd.slots.push(newSlot());document.getElementById('schedSlotsErr').textContent='';renderSchedSlots();
+});
+document.getElementById('schedName').addEventListener('input',function(){document.getElementById('schedNameErr').textContent='';});
+document.querySelectorAll('#schedDayPick .day-btn').forEach(function(b){
+  b.addEventListener('click',function(){
+    if(b.disabled||!schedEd)return;
+    const d=Number(b.dataset.d);
+    if(schedEd.days.has(d))schedEd.days.delete(d);else schedEd.days.add(d);
+    document.getElementById('schedDaysErr').textContent='';
+    renderSchedDays();
+  });
+});
+document.getElementById('schedDayAll').addEventListener('click',function(){setSchedDays([0,1,2,3,4,5,6]);});
+document.getElementById('schedDayWork').addEventListener('click',function(){setSchedDays(WORKDAYS.slice());});
 document.getElementById('settingsBtn').addEventListener('click',openBackupModal);
 document.getElementById('statsBtn').addEventListener('click',openStats);
 document.getElementById('statsBackBtn').addEventListener('click',closeStats);
@@ -2550,7 +2929,13 @@ setTimeout(function(){
     showPinScreen(false);
   }
 }, 2100);
-setInterval(function(){autoReset();render();},60000);
+/* وسط کشیدن کارت یا گروه رندر نکن تا کارت زیر انگشت جابجا نشود؛ دقیقه‌ی بعد انجام می‌شود */
+function isDragging(){return !!(drag||grpDrag);}
+setInterval(function(){if(isDragging())return;autoReset();render();},60000);
+/* iOS تایمر اپِ در پس‌زمینه را اجرا نمی‌کند؛ هنگام برگشت به اپ، ترتیب زمانی گروه‌ها دوباره حساب شود */
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible'&&!isDragging())render();
+});
 
 /* ناحیه‌ی اسکرول دقیقاً زیر نوار ثابت بالا شروع می‌شود. ارتفاع نوار بعد از
    بارگذاری فونت یا تغییر اندازه عوض می‌شود، پس با ResizeObserver به‌روز می‌ماند. */
