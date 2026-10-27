@@ -536,6 +536,14 @@
   .sched-err:empty { display:none; }
   .day-btn:disabled { opacity:.3; cursor:not-allowed; }
 
+  /* v1.17.0: پنجره‌ی «تازه‌های نسخه» بعد از هر آپدیت */
+  .wn-ver { font-size:14px; font-weight:700; color:var(--gold-d); margin:14px 0 6px; }
+  .wn-ver:first-child { margin-top:0; }
+  .wn-list { list-style:none; margin:0; padding:0; }
+  .wn-list li { position:relative; font-size:16px; line-height:1.9; color:var(--dgray); padding-right:16px; }
+  .wn-list li::before { content:''; position:absolute; right:2px; top:.8em; width:6px; height:6px;
+    border-radius:50%; background:var(--gold); }
+
   /* backup modal */
   .bk-section { margin-bottom:20px; }
   .bk-section:last-child { margin-bottom:0; }
@@ -820,6 +828,7 @@
         <button type="button" class="star-btn" data-v="1" aria-label="۱ ستاره">★</button>
         <button type="button" class="star-btn" data-v="2" aria-label="۲ ستاره">★</button>
         <button type="button" class="star-btn" data-v="3" aria-label="۳ ستاره">★</button>
+        <button type="button" class="star-btn" data-v="4" aria-label="۴ ستاره">★</button>
         <span class="star-hint" id="starHint"></span>
       </div>
     </div>
@@ -935,6 +944,18 @@
     <div class="mbtns">
       <button class="mbtn-s" id="moveGrpCancelBtn" style="flex:1">انصراف</button>
       <button class="mbtn-p" id="moveGrpOkBtn">انتقال</button>
+    </div>
+  </div>
+</div>
+
+<!-- v1.17.0: What's new after update -->
+<div class="overlay" id="whatsNewOverlay">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="whatsNewTitle">تازه‌های نسخه</div>
+    <div id="whatsNewBody"></div>
+    <div class="mbtns">
+      <button class="mbtn-p" id="whatsNewOkBtn">متوجه شدم</button>
     </div>
   </div>
 </div>
@@ -1105,7 +1126,7 @@ function getDateLine(){
 let tasks=[],tab='daily',editId=null,ctype='daily';
 let formSubtasks=[]; // working copy of subtasks while the add/edit modal is open
 let searchQuery='';
-let formStars=1;            // امتیاز انتخاب‌شده در فرم افزودن/ویرایش (۱ تا ۳)
+let formStars=1;            // امتیاز انتخاب‌شده در فرم افزودن/ویرایش (۱ تا ۴)
 let editWasDuePending=false; // آیا تسکِ در حال ویرایش، الان در تب روزانه انجام‌نشده نشسته است
 let nextDateTaskId=null;    // تسک «تاریخ مشخص» که منتظر انتخاب سررسید بعدی است
 
@@ -1132,10 +1153,10 @@ function daysLabel(t){
   if(set.size===WORKDAYS.length&&WORKDAYS.every(d=>set.has(d)))return'شنبه تا پنجشنبه';
   return WEEK_ORDER.filter(d=>set.has(d)).map(d=>DAY_SHORT[d]).join('، ');
 }
-/* امتیاز هر تسک ۱ تا ۳ ستاره است؛ تسک‌های قدیمی بدون این فیلد ۱ ستاره حساب می‌شوند. */
+/* امتیاز هر تسک ۱ تا ۴ ستاره است (از v1.17.0؛ قبلاً ۳)؛ تسک‌های قدیمی بدون این فیلد ۱ ستاره حساب می‌شوند. */
 function taskStars(t){
   const s=Number(t&&t.stars);
-  return s>=1&&s<=3?Math.round(s):1;
+  return s>=1&&s<=4?Math.round(s):1;
 }
 
 function save(){localStorage.setItem('shakhes_tasks',JSON.stringify(tasks));}
@@ -2023,7 +2044,7 @@ function updateFormOptsUI(){
   document.getElementById('oneTimeRow').style.display=(ctype==='daily'||isCustomRecurringInForm())?'flex':'none';
   document.getElementById('postponeRow').style.display=(editId&&editWasDuePending&&isCustomRecurringInForm())?'flex':'none';
 }
-const STAR_HINTS=['','ساده','متوسط','سنگین'];
+const STAR_HINTS=['','ساده','متوسط','دشوار','سنگین'];
 function renderStarPick(){
   document.querySelectorAll('#starPick .star-btn').forEach(b=>{
     b.classList.toggle('on',Number(b.dataset.v)<=formStars);
@@ -2652,7 +2673,51 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.16.0';
+var CURRENT_VERSION = '1.17.0';
+
+/* ── تازه‌های نسخه (v1.17.0) ──
+   با هر بالا رفتن نسخه، یک ورودی به ابتدای این آرایه اضافه کن (همان شماره‌ی CURRENT_VERSION).
+   بعد از آپدیت، ورودی‌های جدیدتر از shakhes_seen_version یک بار در پنجره نمایش داده می‌شوند.
+   نسخه‌ای که ورودی ندارد پنجره‌ای باز نمی‌کند. */
+var WHATS_NEW = [
+  { v:'1.17.0', items:[
+    'امتیاز هر تسک از این نسخه ۴ ستاره شد: ساده، متوسط، دشوار و سنگین.',
+    'از این به بعد، بعد از هر به‌روزرسانی، خلاصه‌ی تغییرات نسخه‌ی جدید در همین پنجره نمایش داده می‌شود.'
+  ]}
+];
+function cmpVer(a,b){
+  const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);
+  for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d>0?1:-1;}
+  return 0;
+}
+let whatsNewDone=false;
+function maybeShowWhatsNew(){
+  if(whatsNewDone)return;
+  if(document.getElementById('pinScreen').classList.contains('show'))return; // بعد از باز کردن قفل
+  whatsNewDone=true;
+  let seen=null;try{seen=localStorage.getItem('shakhes_seen_version');}catch(e){}
+  /* نصب تازه (بدون تسک) پیغام «تازه‌ها» نمی‌بیند؛ کاربر قدیمی که این کلید را هنوز ندارد فقط تازه‌های همین نسخه را می‌بیند */
+  if(!seen){
+    if(!tasks.length){markVersionSeen();return;}
+    seen='0';
+  }
+  if(cmpVer(seen,CURRENT_VERSION)>=0){if(cmpVer(seen,CURRENT_VERSION)>0)markVersionSeen();return;}
+  const entries=WHATS_NEW.filter(e=>cmpVer(e.v,seen)>0&&cmpVer(e.v,CURRENT_VERSION)<=0)
+    .sort((a,b)=>cmpVer(b.v,a.v));
+  const shown=seen==='0'?entries.filter(e=>e.v===CURRENT_VERSION):entries;
+  if(!shown.length){markVersionSeen();return;}
+  document.getElementById('whatsNewTitle').textContent=shown.length===1?'تازه‌های نسخه '+fp(shown[0].v):'تازه‌های نسخه‌های جدید';
+  const body=document.getElementById('whatsNewBody');body.innerHTML='';
+  shown.forEach(e=>{
+    if(shown.length>1){const h=document.createElement('div');h.className='wn-ver';h.textContent='نسخه '+fp(e.v);body.appendChild(h);}
+    const ul=document.createElement('ul');ul.className='wn-list';
+    e.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
+    body.appendChild(ul);
+  });
+  document.getElementById('whatsNewOverlay').classList.add('open');
+}
+function markVersionSeen(){try{localStorage.setItem('shakhes_seen_version',CURRENT_VERSION);}catch(e){}}
+function closeWhatsNew(){document.getElementById('whatsNewOverlay').classList.remove('open');markVersionSeen();}
 
 function checkForUpdate(showNoUpdateAlert){
   fetch('version.json?t=' + Date.now())
@@ -2719,6 +2784,7 @@ function showPinScreen(setupMode){
 }
 function hidePinScreen(){
   document.getElementById('pinScreen').classList.remove('show');
+  setTimeout(maybeShowWhatsNew,350);
 }
 function handlePinKey(k){
   if(pinEntry.length>=4)return;
@@ -2918,6 +2984,8 @@ document.getElementById('bkFileInput').addEventListener('change',function(e){
 });
 document.getElementById('manualCheckBtn').addEventListener('click',function(){checkForUpdate(true);});
 document.getElementById('updateFab').addEventListener('click',doUpdate);
+document.getElementById('whatsNewOkBtn').addEventListener('click',closeWhatsNew);
+document.getElementById('whatsNewOverlay').addEventListener('click',function(e){if(e.target===this)closeWhatsNew();});
 
 load();render();
 checkForUpdate(false);
@@ -2928,6 +2996,7 @@ setTimeout(function(){
   if(isPinEnabled()){
     showPinScreen(false);
   }
+  setTimeout(maybeShowWhatsNew,450); // اگر قفل باز است، بعد از باز کردن قفل نمایش داده می‌شود
 }, 2100);
 /* وسط کشیدن کارت یا گروه رندر نکن تا کارت زیر انگشت جابجا نشود؛ دقیقه‌ی بعد انجام می‌شود */
 function isDragging(){return !!(drag||grpDrag);}
