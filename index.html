@@ -176,6 +176,22 @@
   .bar-label { font-size:8px; color:#8a8577; height:12px; line-height:12px; margin-top:4px; white-space:nowrap; overflow:visible; max-width:none; flex-shrink:0; }
   .bars.week-mode .bar-label { font-size:11px; height:15px; line-height:15px; }
   .stats-empty { text-align:center; padding:40px 20px; color:#8a8577; font-size:13px; }
+  /* v1.18.0: تمرکز گروه‌ها */
+  .focus-legend { font-size:11px; color:#8a8577; line-height:1.7; margin:-6px 4px 10px; }
+  .focus-chart { padding:0 2px; }
+  .focus-row { display:grid; grid-template-columns:96px 1fr 40px; align-items:center; gap:8px; height:32px; }
+  .focus-name { display:flex; align-items:center; gap:6px; min-width:0; font-size:13px; color:var(--green); }
+  .focus-name span:last-child { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .focus-track { position:relative; height:100%; display:flex; align-items:center; }
+  .focus-track::before { content:''; position:absolute; right:0; left:0; top:50%; height:1px; background:rgba(61,58,40,.08); }
+  .focus-bar { position:relative; border-radius:4px 0 0 4px; min-width:2px; }
+  .focus-avg { position:absolute; top:0; bottom:0; right:calc(var(--avg) * 1%); border-right:1.5px dashed var(--dgray); opacity:.55; }
+  .focus-val { font-size:12px; font-weight:700; color:var(--green); text-align:left; }
+  .focus-table { width:100%; border-collapse:collapse; margin-top:12px; font-size:12px; color:var(--dgray); }
+  .focus-table th { font-weight:600; color:#8a8577; padding:4px 2px; text-align:center; border-bottom:1px solid rgba(0,0,0,.08); }
+  .focus-table th:first-child, .focus-table td:first-child { text-align:right; }
+  .focus-table td { padding:5px 2px; text-align:center; border-bottom:1px solid rgba(0,0,0,.04); }
+  .focus-note { font-size:11px; color:#8a8577; margin:8px 4px 0; }
 
   /* settings toggle row */
   .bk-toggle-row { display:flex; align-items:center; justify-content:space-between; }
@@ -648,6 +664,11 @@
       <div class="chart-title" id="statsChartTitle">۷ روز اخیر</div>
       <div class="bars" id="statsBars"></div>
     </div>
+    <!-- v1.18.0: تمرکز گروه‌ها -->
+    <div class="chart-card" id="focusCard" style="margin-top:16px;">
+      <div class="chart-title">تمرکز گروه‌ها</div>
+      <div id="focusChart"></div>
+    </div>
     <div class="chart-card" id="trendCard" style="display:none; margin-top:16px;">
       <div class="chart-title">روند معدل روزانه (۳۰ روز)</div>
       <div id="trendChart"></div>
@@ -1025,7 +1046,7 @@
         <button class="bk-btn bk-btn-ghost" id="bkRestoreBtn">بازگردانی</button>
       </div>
       <input type="file" id="bkFileInput" accept="application/json,.json" style="display:none">
-      <p class="bk-sub" style="margin-top:8px;">فایل JSON شامل تسک‌ها، ترتیب و برنامه‌های گروه‌ها</p>
+      <p class="bk-sub" style="margin-top:8px;">فایل JSON شامل تسک‌ها، گروه‌ها و آمار</p>
       <div class="bk-status" id="bkSaveStatus"></div>
       <div class="bk-status" id="bkRestoreStatus"></div>
     </div>
@@ -1292,10 +1313,22 @@ function calcDayStats(taskList,dateStr){
   const doneList=all.filter(t=>t.done);
   const totalW=all.reduce((s,t)=>s+taskStars(t),0);
   const doneW=doneList.reduce((s,t)=>s+taskStars(t),0);
+  /* v1.18.0: وزن ستاره‌ای به تفکیک گروه، برای معدل «نسبت مجموع‌ها» و نمودار تمرکز گروه‌ها */
+  const groups={};
+  all.forEach(t=>{
+    const nm=(t.group||'').trim();
+    const k=nm?normalize(nm):'__none__';
+    if(!groups[k])groups[k]=[0,0,nm];
+    groups[k][1]+=taskStars(t);
+    if(t.done)groups[k][0]+=taskStars(t);
+  });
   return {
     pct: totalW===0?0:Math.round(doneW/totalW*100),
     done: doneList.length,
-    total: all.length
+    total: all.length,
+    dw: doneW,
+    tw: totalW,
+    groups
   };
 }
 function calcPctForDate(taskList,dateStr){
@@ -1338,6 +1371,17 @@ function recordDailyStat(dateStr,pct){
   hist[dateStr]=pct;
   localStorage.setItem('shakhes_stats_history',JSON.stringify(hist));
 }
+/* v1.18.0: جزئیات هر روز در shakhes_day_stats: {date:{d:ستاره‌ی انجام‌شده, t:ستاره‌ی کل, g:{کلید گروه:[d,t,نام]}}}
+   روزی که برنامه‌ای نداشت (t=0) در shakhes_stats_history مقدار null می‌گیرد تا در معدل حساب نشود. */
+function getDayStats(){
+  try{const o=JSON.parse(localStorage.getItem('shakhes_day_stats'));return o&&typeof o==='object'?o:{};}catch(e){return{};}
+}
+function recordDayStats(dateStr,st){
+  const all=getDayStats();
+  all[dateStr]={d:st.dw,t:st.tw,g:st.groups};
+  localStorage.setItem('shakhes_day_stats',JSON.stringify(all));
+  recordDailyStat(dateStr,st.tw>0?st.pct:null);
+}
 function autoReset(){
   const tstr=localDateStr();let changed=false;
   const today=todayStr();
@@ -1345,12 +1389,15 @@ function autoReset(){
   const isNewDay=lastCheck!==today;
   if(isNewDay&&lastCheck){
     const lastCheckDateStr=localDateStr(new Date(lastCheck));
-    const pctYesterday=calcPctForDate(tasks,lastCheckDateStr);
-    recordDailyStat(lastCheckDateStr,pctYesterday);
+    recordDayStats(lastCheckDateStr,calcDayStats(tasks,lastCheckDateStr));
+    /* روزهایی که اپ باز نشده: هیچ کاری تیک نخورده، پس ۰٪ (به تصمیم کاربر)؛
+       ولی اگر آن روز اصلاً برنامه‌ای نداشت، «بدون برنامه» ثبت می‌شود. */
     const gapStart=new Date(lastCheck);gapStart.setDate(gapStart.getDate()+1);
     const todayDate=new Date(today);
+    const undone=tasks.map(t=>Object.assign({},t,{done:false}));
     for(let d=new Date(gapStart);d<todayDate;d.setDate(d.getDate()+1)){
-      recordDailyStat(localDateStr(d),0);
+      const ds=localDateStr(d);
+      recordDayStats(ds,calcDayStats(undone,ds));
     }
   }
   /* تسک‌های یک‌بار مصرفی که روزهای قبل انجام شده‌اند حذف می‌شوند. این کار
@@ -1409,8 +1456,25 @@ function renderStats(){
   document.getElementById('statsChartTitle').textContent=statsRange==='week'?'۷ روز اخیر (تا دیروز)':'۳۰ روز اخیر (تا دیروز)';
 
   const recorded=days.filter(d=>d.pct!==null);
-  const avg=recorded.length?Math.round((recorded.reduce((s,d)=>s+d.pct,0)/recorded.length)*10)/10:0;
+  /* v1.18.0: معدل = «نسبت مجموع‌ها» (ستاره‌ی انجام‌شده ÷ ستاره‌ی برنامه در کل بازه)، تا روزهای پرکار وزن بیشتری داشته باشند.
+     روزهای قبل از v1.18.0 فقط درصد دارند؛ تا وقتی در بازه هستند با وزنِ میانگینِ روزهای جدید وارد می‌شوند.
+     روزهای بدون برنامه (null) حساب نمی‌شوند. */
+  const dayStats=getDayStats();
+  const fresh=recorded.filter(d=>dayStats[d.dateStr]&&dayStats[d.dateStr].t>0);
+  const legacy=recorded.filter(d=>!(dayStats[d.dateStr]&&dayStats[d.dateStr].t>0));
+  let avg=0;
+  if(fresh.length){
+    const sd=fresh.reduce((a,d)=>a+dayStats[d.dateStr].d,0);
+    const st=fresh.reduce((a,d)=>a+dayStats[d.dateStr].t,0);
+    const wbar=st/fresh.length;
+    const num=sd+legacy.reduce((a,d)=>a+d.pct/100*wbar,0);
+    const den=st+legacy.length*wbar;
+    avg=den?Math.round(num/den*1000)/10:0;
+  } else if(recorded.length){
+    avg=Math.round((recorded.reduce((s,d)=>s+d.pct,0)/recorded.length)*10)/10;
+  }
   document.getElementById('statsAvgValue').textContent=fp(avg)+'٪';
+  renderFocusChart(days,dayStats);
 
   const barsEl=document.getElementById('statsBars');
   barsEl.innerHTML='';
@@ -1468,6 +1532,69 @@ function renderStats(){
     renderTrendChart(days);
   } else {
     trendCard.style.display='none';
+  }
+}
+
+/* v1.18.0: «تمرکز گروه‌ها» — میله‌ی افقی با ضخامت متغیر:
+   ضخامت = سهم گروه از ستاره‌های برنامه، طول = درصد انجام گروه، خط‌چین = معدل همین روزها.
+   فقط روزهایی که جزئیات گروه دارند (از v1.18.0) حساب می‌شوند. */
+function renderFocusChart(days,dayStats){
+  const el=document.getElementById('focusChart');if(!el)return;
+  el.innerHTML='';
+  const fresh=days.filter(d=>dayStats[d.dateStr]&&dayStats[d.dateStr].t>0);
+  if(!fresh.length){
+    el.innerHTML='<div class="stats-empty">آمار گروه‌ها از این نسخه ثبت می‌شود و از فردا اینجا نمایش داده می‌شود.</div>';
+    return;
+  }
+  const agg={};let SD=0,ST=0;
+  fresh.forEach(d=>{
+    const ds=dayStats[d.dateStr];SD+=ds.d;ST+=ds.t;
+    Object.keys(ds.g||{}).forEach(k=>{
+      const v=ds.g[k];if(!agg[k])agg[k]={d:0,t:0,name:''};
+      agg[k].d+=v[0];agg[k].t+=v[1];if(v[2])agg[k].name=v[2]; // نام آخرین روز می‌ماند
+    });
+  });
+  const rows=Object.keys(agg).filter(k=>agg[k].t>0).map(k=>{
+    const a=agg[k];const none=k==='__none__';
+    return {key:k,name:none?'بدون گروه':(a.name||k),color:none?'var(--lgray)':groupColor(a.name||k),
+      plan:a.t/ST,doneShare:SD?a.d/SD:0,comp:a.d/a.t};
+  }).sort((x,y)=>y.plan-x.plan);
+  const avg=ST?SD/ST:0;
+  const maxPlan=Math.max(...rows.map(r=>r.plan));
+  const pc=v=>fp(Math.round(v*100))+'٪';
+
+  const legend=document.createElement('p');legend.className='focus-legend';
+  legend.textContent='ضخامت میله = سهم از برنامه · طول = درصد انجام · خط‌چین = معدل این روزها ('+pc(avg)+')';
+  el.appendChild(legend);
+
+  const chart=document.createElement('div');chart.className='focus-chart';chart.style.setProperty('--avg',(avg*100).toFixed(2));
+  rows.forEach(r=>{
+    const row=document.createElement('div');row.className='focus-row';
+    const thick=Math.max(4,Math.round(r.plan/maxPlan*22));
+    row.innerHTML='<div class="focus-name"><span class="grp-dot" style="background:'+r.color+'"></span><span>'+escHtml(r.name)+'</span></div>'+
+      '<div class="focus-track"><div class="focus-bar" style="width:'+Math.max(r.comp*100,1).toFixed(1)+'%;height:'+thick+'px;background:'+r.color+'"></div><div class="focus-avg"></div></div>'+
+      '<div class="focus-val">'+pc(r.comp)+'</div>';
+    row.title=r.name+': سهم از برنامه '+pc(r.plan)+'، سهم از انجام‌شده '+pc(r.doneShare)+'، انجام '+pc(r.comp);
+    chart.appendChild(row);
+  });
+  el.appendChild(chart);
+
+  const tbl=document.createElement('table');tbl.className='focus-table';
+  tbl.innerHTML='<thead><tr><th>گروه</th><th>از برنامه</th><th>از انجام‌شده</th><th>انجام</th></tr></thead>';
+  const tb=document.createElement('tbody');
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+escHtml(r.name)+'</td><td>'+pc(r.plan)+'</td><td>'+(SD?pc(r.doneShare):'—')+'</td><td>'+pc(r.comp)+'</td>';
+    tb.appendChild(tr);
+  });
+  tbl.appendChild(tb);el.appendChild(tbl);
+
+  const recordedDays=days.filter(d=>d.pct!==null).length;
+  if(fresh.length<recordedDays){
+    const first=fresh[0].date;const sh=toShamsiFixed(first);
+    const note=document.createElement('p');note.className='focus-note';
+    note.textContent='بر اساس '+fp(fresh.length)+' روز؛ آمار گروه‌ها از '+fp(sh.d)+' '+SHAMSI_M[sh.m-1]+' به بعد ثبت شده است.';
+    el.appendChild(note);
   }
 }
 
@@ -2589,7 +2716,7 @@ function dragEnd(e){
 function buildBackupObject(){
   return {
     app: 'shakhes-planner',
-    backupVersion: 2,
+    backupVersion: 3,
     exportedAt: new Date().toISOString(),
     exportedAtShamsi: getDateLine(),
     data: {
@@ -2597,7 +2724,10 @@ function buildBackupObject(){
       shakhes_grp_order: localStorage.getItem('shakhes_grp_order') || '[]',
       /* v1.16.0 (backupVersion 2): برنامه‌های زمانی و حالت ترتیب گروه‌ها */
       shakhes_grp_schedules: localStorage.getItem('shakhes_grp_schedules') || '[]',
-      shakhes_grp_order_mode: getOrderMode()
+      shakhes_grp_order_mode: getOrderMode(),
+      /* v1.18.0 (backupVersion 3): آمار روزانه و جزئیات ستاره‌ای/گروهی هر روز */
+      shakhes_stats_history: localStorage.getItem('shakhes_stats_history') || '{}',
+      shakhes_day_stats: localStorage.getItem('shakhes_day_stats') || '{}'
     }
   };
 }
@@ -2655,6 +2785,11 @@ function restoreFromFile(file){
         try{if(Array.isArray(JSON.parse(payload.shakhes_grp_schedules))){localStorage.setItem('shakhes_grp_schedules',payload.shakhes_grp_schedules);schedOk=true;}}catch(_){}
       }
       setOrderMode(schedOk&&payload.shakhes_grp_order_mode==='schedule'?'schedule':'manual');
+      /* backupVersion 3: آمار؛ فایل‌های قدیمی‌تر آمار فعلی دستگاه را دست نمی‌زنند */
+      ['shakhes_stats_history','shakhes_day_stats'].forEach(function(k){
+        if(typeof payload[k]!=='string')return;
+        try{const o=JSON.parse(payload[k]);if(o&&typeof o==='object'&&!Array.isArray(o))localStorage.setItem(k,payload[k]);}catch(_){}
+      });
       showBkStatus('bkRestoreStatus','✓ بازگردانی شد. در حال بارگذاری مجدد...',true);
       setTimeout(function(){window.location.reload();},1000);
     }catch(err){showBkStatus('bkRestoreStatus','خطا در خواندن فایل',false);}
@@ -2673,13 +2808,17 @@ function getDiagInfo(){
   }catch(e){return 'خطا در خواندن داده: '+e.message;}
 }
 /* ── Update Check ── */
-var CURRENT_VERSION = '1.17.0';
+var CURRENT_VERSION = '1.18.0';
 
 /* ── تازه‌های نسخه (v1.17.0) ──
    با هر بالا رفتن نسخه، یک ورودی به ابتدای این آرایه اضافه کن (همان شماره‌ی CURRENT_VERSION).
    بعد از آپدیت، ورودی‌های جدیدتر از shakhes_seen_version یک بار در پنجره نمایش داده می‌شوند.
    نسخه‌ای که ورودی ندارد پنجره‌ای باز نمی‌کند. */
 var WHATS_NEW = [
+  { v:'1.18.0', items:[
+    'نمودار جدید «تمرکز گروه‌ها» در صفحه‌ی آمار: برای هر گروه نشان می‌دهد چه سهمی از برنامه‌ات داشته و چند درصدش انجام شده. روزهایی که هیچ کاری در برنامه نداری، دیگر ۰٪ ثبت نمی‌شوند و معدل را پایین نمی‌آورند.',
+    'معدل هفتگی و ماهانه از این به بعد بر اساس کل کار برنامه‌ریزی‌شده حساب می‌شود؛ روزهای پرکارتر وزن بیشتری دارند.'
+  ]},
   { v:'1.17.0', items:[
     'امتیاز هر تسک از این نسخه ۴ ستاره شد: ساده، متوسط، دشوار و سنگین.',
     'از این به بعد، بعد از هر به‌روزرسانی، خلاصه‌ی تغییرات نسخه‌ی جدید در همین پنجره نمایش داده می‌شود.'
